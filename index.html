@@ -9,49 +9,33 @@
 <body>
     <div class="container">
         <section id="barca-widget">
-            <h2>FC Barcelona Tracker</h2>
+            <h2>FC Barcelona Hub</h2>
             
-            <div id="scoreaxis-widget-81" class="scoreaxis-widget">
-                <iframe 
-                    id="Iframe" 
-                    src="https://www.scoreaxis.com/widget/team-next-match/81?autoHeight=1&font=Open+Sans&inst=1" 
-                    style="width:100%; border:none; transition:all 300ms">
-                </iframe>
-                <script>
-                    window.addEventListener("message", (e) => {
-                        if (e.data.action === "resize") {
-                            document.getElementById("Iframe").style.height = e.data.height + "px";
-                        }
-                    }, false);
-                </script>
+            <div id="widget-6edamnzlaqzm" class="scoreaxis-widget" style="width: auto; height: auto; font-size: 14px; background-color: #ffffff; color: #141416; border: 1px solid; border-color: #ecf1f7; overflow: auto;">
+                <script src="https://widgets.scoreaxis.com/api/football/team-info/62321b15adaf4b2bd73de814?widgetId=6edamnzlaqzm&lang=en&statsBlock=1&playersBlock=1&matchesBlock=1&links=1&font=heebo&fontSize=14&rowDensity=100&widgetWidth=auto&widgetHeight=auto&bodyColor=%23ffffff&textColor=%23141416&linkColor=%23141416&borderColor=%23ecf1f7&tabColor=%23f3f8fd" async></script>
+                <div class="widget-main-link" style="padding: 6px 12px; font-weight: 500;">
+                    Live data by <a href="https://www.scoreaxis.com/" style="color: inherit;">Scoreaxis</a>
+                </div>
             </div>
-            </section>
+        </section>
 
         <hr>
 
         <section id="ai-assistant">
-            <h2>AI Calendar Assistant (GPT-4)</h2>
+            <h2>AI Assistant (GPT-4)</h2>
             <div id="chat-window">
-                <p><strong>AI:</strong> Hello! Ask me about your schedule and the next Barça game.</p>
+                <p><strong>AI:</strong> Hello! Ask me anything.</p>
             </div>
-            <div class="input-area">
-                <input type="text" id="user-input" placeholder="Can I watch the next game?">
-                <button onclick="askAI()">Ask AI</button>
+            <div class="input-area" style="display: flex; gap: 10px; margin-top: 10px;">
+                <input type="text" id="user-input" style="flex-grow: 1; padding: 10px; border-radius: 5px; border: 1px solid #ccc;" placeholder="Can I watch the next game?">
+                <button onclick="askAI()" style="padding: 10px 20px; background: #004d98; color: white; border: none; border-radius: 5px; cursor: pointer;">Ask AI</button>
             </div>
         </section>
     </div>
 
     <script src="script.js"></script>
-    
+
     <script async defer src="https://apis.google.com/js/api.js"></script>
     <script async defer src="https://accounts.google.com/gsi/client"></script>
-</body>
-</html>
-        </section>
-    </div>
-
-    <script src="script.js"></script>
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
 </body>
 </html>
