@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barça Dashboard & AI Assistant</title>
     <link rel="stylesheet" href="style.css">
 </head>
@@ -9,9 +10,22 @@
     <div class="container">
         <section id="barca-widget">
             <h2>FC Barcelona Tracker</h2>
-            <div id="status-container">Loading match data...</div>
-            <div id="standings-container"></div>
-        </section>
+            
+            <div id="scoreaxis-widget-81" class="scoreaxis-widget">
+                <iframe 
+                    id="Iframe" 
+                    src="https://www.scoreaxis.com/widget/team-next-match/81?autoHeight=1&font=Open+Sans&inst=1" 
+                    style="width:100%; border:none; transition:all 300ms">
+                </iframe>
+                <script>
+                    window.addEventListener("message", (e) => {
+                        if (e.data.action === "resize") {
+                            document.getElementById("Iframe").style.height = e.data.height + "px";
+                        }
+                    }, false);
+                </script>
+            </div>
+            </section>
 
         <hr>
 
@@ -20,8 +34,19 @@
             <div id="chat-window">
                 <p><strong>AI:</strong> Hello! Ask me about your schedule and the next Barça game.</p>
             </div>
-            <input type="text" id="user-input" placeholder="Can I watch the next game?">
-            <button onclick="askAI()">Ask AI</button>
+            <div class="input-area">
+                <input type="text" id="user-input" placeholder="Can I watch the next game?">
+                <button onclick="askAI()">Ask AI</button>
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+    
+    <script async defer src="https://apis.google.com/js/api.js"></script>
+    <script async defer src="https://accounts.google.com/gsi/client"></script>
+</body>
+</html>
         </section>
     </div>
 
