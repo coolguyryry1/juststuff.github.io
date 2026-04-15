@@ -33,10 +33,10 @@ async function askAI() {
 
     try {
         // We tell the AI it is April 2026.
-        const response = await puter.ai.chat(`It is April 2026. You are a Barça expert assistant. Question: ${userInput}`);
+        const response = await puter.ai.chat(`Help the user the most you can with whatever they ask, try to keep responses short unless specifically told to have a longer answer. Question: ${userInput}`);
         loadingMsg.innerHTML = `<strong>AI:</strong> ${response}`;
     } catch (error) {
-        loadingMsg.innerHTML = "<strong>AI:</strong> My brain is a bit slow today. Try again!";
+        loadingMsg.innerHTML = "<strong>AI:</strong> Sorry I couldnt load a response. Try again!";
     }
 
     chatWindow.scrollTop = chatWindow.scrollHeight;
