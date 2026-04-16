@@ -19,8 +19,11 @@
 
         <section class="card">
             <h2>Barça Updates</h2>
-            <div id="widget-6edamnzlaqzm" class="scoreaxis-widget">
-                <script src="https://widgets.scoreaxis.com/api/football/team-info/62321b15adaf4b2bd73de814?widgetId=6edamnzlaqzm&lang=en&statsBlock=1&playersBlock=1&matchesBlock=1&links=1&font=heebo&fontSize=14" async></script>
+            <div id="widget-y10pmo12cil8" class="scoreaxis-widget" style="width: auto;height: auto;font-size: 14px;background-color: #ffffff;color: #141416;border: 1px solid;border-color: #ecf1f7;overflow: auto;">
+                <script src="https://widgets.scoreaxis.com/api/football/team-info/62321b15adaf4b2bd73de814?widgetId=y10pmo12cil8&lang=en&statsBlock=1&playersBlock=1&matchesBlock=1&links=1&font=heebo&fontSize=14&rowDensity=100&widgetWidth=auto&widgetHeight=auto&bodyColor=%23ffffff&textColor=%23141416&linkColor=%23141416&borderColor=%23ecf1f7&tabColor=%23f3f8fd" async></script>
+                <div class="widget-main-link" style="padding: 6px 12px;font-weight: 500;">
+                    Live data by <a href="https://www.scoreaxis.com/" style="color: inherit;">Scoreaxis</a>
+                </div>
             </div>
         </section>
 
@@ -32,6 +35,20 @@
                     <p>Score: <span id="jumpScore">0</span></p>
                     <button onclick="initJumpGame()" class="btn">Start Game</button>
                 </div>
+            </div>
+        </section>
+
+        <section class="card" id="calendar-card">
+            <h2>Schedule</h2>
+            <div id="g_id_onload"
+                 data-client_id="395838452484-29r7mrhrb50og9elibotn4e3051fmi03.apps.googleusercontent.com"
+                 data-callback="handleCredentialResponse">
+            </div>
+            <div class="g_id_signin" data-type="standard"></div>
+
+            <div id="calendar-container" style="display:none;">
+                <p>User: <span id="user-email"></span></p>
+                <iframe id="google-calendar-iframe" width="100%" height="400" frameborder="0" scrolling="no"></iframe>
             </div>
         </section>
 
