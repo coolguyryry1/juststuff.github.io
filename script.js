@@ -1,3 +1,27 @@
+function showTab(tabId) {
+    // Hide all tab content
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.remove('active');
+    });
+
+    // Remove active class from all buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Show the selected tab
+    document.getElementById(tabId).classList.add('active');
+
+    // Add active class to the clicked button
+    event.currentTarget.classList.add('active');
+    
+    // Stop the game if we leave the game tab
+    if (tabId !== 'game') {
+        isPlaying = false;
+        if (anim) cancelAnimationFrame(anim);
+    }
+}
+
 // --- 1. Google Login & Calendar Logic ---
 function handleCredentialResponse(response) {
     // Decode the Google ID Token (JWT)
