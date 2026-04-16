@@ -63,3 +63,41 @@ canvas {
 
 .input-group { display: flex; gap: 10px; }
 input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+/* Toolbar Styling */
+.toolbar {
+    background: #fff;
+    padding: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.nav-btn {
+    background: none;
+    border: none;
+    font-weight: bold;
+    color: #718096;
+    cursor: pointer;
+    padding: 8px 16px;
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.nav-btn.active {
+    background: #4A90E2;
+    color: white;
+}
+
+/* Tab Logic */
+.tab-content {
+    display: none; /* Hide everything by default */
+}
+
+.tab-content.active {
+    display: block; /* Only show the active one */
+}
