@@ -79,7 +79,7 @@ playerImg.src = 'character.png';
 let player = { 
     x: 135, y: 400, w: 60, h: 48, 
     dy: 0, 
-    jump: -15,    // Buffed jump height
+    jump: -12,    // Buffed jump height
     grav: 0.4,    // Kept floaty gravity
     facing: 'right' 
 };
