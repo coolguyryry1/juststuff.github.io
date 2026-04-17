@@ -20,7 +20,7 @@ function showTab(tabId) {
         event.currentTarget.classList.add('active');
     }
     
-    // WAKE UP THE WIDGET: This forces the browser to recalculate layouts
+    // WAKE UP THE WIDGET
     window.dispatchEvent(new Event('resize'));
 
     // Stop the game if we leave the game tab
@@ -32,19 +32,15 @@ function showTab(tabId) {
 
 // --- 1. Google Login & Calendar Logic ---
 function handleCredentialResponse(response) {
-    // Decode the Google ID Token (JWT)
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const email = payload.email;
 
-    // Update the UI
     document.getElementById('user-email').innerText = email;
     document.getElementById('calendar-container').style.display = 'block';
     
-    // Set the Iframe to the user's email calendar
     const iframe = document.getElementById('google-calendar-iframe');
     iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(email)}&ctz=America%2FNew_York`;
     
-    // Hide the login button after success
     document.querySelector('.g_id_signin').style.display = 'none';
 }
 
@@ -64,7 +60,6 @@ async function askAI() {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 
     try {
-        // We tell the AI it is April 2026.
         const response = await puter.ai.chat(`Help the user the most you can with whatever they ask, try to keep responses short unless specifically told to have a longer answer. Question: ${userInput}`);
         loadingMsg.innerHTML = `<strong>AI:</strong> ${response}`;
     } catch (error) {
@@ -79,12 +74,13 @@ const canvas = document.getElementById('jumpGame');
 const ctx = canvas ? canvas.getContext('2d') : null;
 
 const playerImg = new Image();
-playerImg.src = 'character.png'; // Make sure your file is named exactly this!
+playerImg.src = 'character.png'; 
 
-// Proportions based on your 331x266 image
 let player = { 
     x: 135, y: 400, w: 60, h: 48, 
-    dy: 0, jump: -10, grav: 0.4, 
+    dy: 0, 
+    jump: -12,    // Buffed jump height
+    grav: 0.4,    // Kept floaty gravity
     facing: 'right' 
 };
 
@@ -109,13 +105,13 @@ function generatePlatform(yStart) {
 }
 
 function shoot() {
+    // Bullet speed is controlled in gameLoop (b.y -= 7)
     bullets.push({ x: player.x + player.w / 2 - 3, y: player.y, w: 6, h: 12 });
 }
 
 function drawPlayer() {
     ctx.save();
     if (player.facing === 'left') {
-        // Flip image so trunk points left
         ctx.translate(player.x + player.w, player.y);
         ctx.scale(-1, 1);
         ctx.drawImage(playerImg, 0, 0, player.w, player.h);
@@ -132,7 +128,6 @@ function initJumpGame() {
     boss.active = false; boss.hp = 10; boss.y = -100; boss.defeated = false;
     document.getElementById('jumpScore').innerText = score;
     
-    // Ground platform
     platforms.push({ x: 125, y: 450, w: 50, h: 12, type: 'normal', rocket: false });
     for (let i = 0; i < 6; i++) platforms.push(generatePlatform(i * 75));
     
@@ -145,9 +140,9 @@ function gameLoop() {
     if (!isPlaying) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Movement
-    if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 5; player.facing = 'left'; }
-    if (keys['ArrowRight'] || keys['KeyD']) { player.x += 5; player.facing = 'right'; }
+    // Faster strafing speed (7)
+    if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 7; player.facing = 'left'; }
+    if (keys['ArrowRight'] || keys['KeyD']) { player.x += 7; player.facing = 'right'; }
 
     player.dy += player.grav;
     player.y += player.dy;
@@ -155,7 +150,6 @@ function gameLoop() {
     if (player.x > canvas.width) player.x = -player.w;
     else if (player.x + player.w < 0) player.x = canvas.width;
 
-    // Boss Spawn
     if (score >= 1000 && !boss.defeated && !boss.active) boss.active = true;
 
     if (boss.active) {
@@ -172,14 +166,13 @@ function gameLoop() {
         ctx.fillRect(10, 10, boss.hp * 20, 10);
     }
 
-    // Hitbox Math (Body is ~67% of the image)
     let bodyWidth = player.w * 0.67; 
     let trunkWidth = player.w - bodyWidth;
     let hitboxX = (player.facing === 'right') ? player.x : player.x + trunkWidth;
 
-    // Bullets
+    // Predictive bullets (Speed 7)
     bullets.forEach((b, i) => {
-        b.y -= 8;
+        b.y -= 7; 
         ctx.fillStyle = "#2D3748";
         ctx.fillRect(b.x, b.y, b.w, b.h);
         if (b.y < 0) bullets.splice(i, 1);
@@ -190,7 +183,6 @@ function gameLoop() {
         }
     });
 
-    // Platforms & Collision
     if (player.y < 250) {
         let offset = 250 - player.y;
         player.y = 250;
@@ -204,7 +196,16 @@ function gameLoop() {
 
     platforms.forEach(p => {
         ctx.fillStyle = "#48bb78";
-        ctx.fillRect(p.x, p.y, p.w, p.h);
+        
+        // DRAW ROUNDED PLATFORMS
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+        } else {
+            ctx.fillRect(p.x, p.y, p.w, p.h); 
+        }
+        ctx.fill();
+
         if (p.type === 'spring') { ctx.fillStyle = "#a0aec0"; ctx.fillRect(p.x + 15, p.y - 8, 20, 8); }
         
         if (player.dy > 0 && 
@@ -225,7 +226,6 @@ function gameLoop() {
     else anim = requestAnimationFrame(gameLoop);
 }
 
-// Input listeners
 window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') && isPlaying && canShoot) {
