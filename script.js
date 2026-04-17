@@ -20,21 +20,26 @@ function showTab(tabId) {
         event.currentTarget.classList.add('active');
     }
     
-    // WAKE UP THE WIDGET
-    // We target your specific widget ID to force a re-render
+    // WIDGET RE-LOADER
     if (tabId === 'barca') {
-        setTimeout(() => {
-            window.dispatchEvent(new Event('resize'));
-            const widget = document.getElementById('widget-8fhkmo3eac2k');
-            if (widget) {
-                widget.style.display = 'none';
-                widget.offsetHeight; // Force reflow
-                widget.style.display = 'block';
-            }
-        }, 150);
-    } else {
-        window.dispatchEvent(new Event('resize'));
+        const container = document.getElementById('widget-f7zrmo3f2vrk');
+        if (container) {
+            container.innerHTML = ''; // Clear it
+            const script = document.createElement('script');
+            script.src = "https://widgets.scoreaxis.com/api/football/team-info/62321b15adaf4b2bd73de814?widgetId=f7zrmo3f2vrk&lang=en&statsBlock=1&playersBlock=1&matchesBlock=1&links=1&font=heebo&fontSize=14&rowDensity=100&widgetWidth=auto&widgetHeight=auto&bodyColor=%23ffffff&textColor=%23141416&linkColor=%23141416&borderColor=%23ecf1f7&tabColor=%23f3f8fd";
+            script.async = true;
+            
+            const linkDiv = document.createElement('div');
+            linkDiv.className = "widget-main-link";
+            linkDiv.style = "padding: 6px 12px; font-weight: 500;";
+            linkDiv.innerHTML = 'Live data by <a href="https://www.scoreaxis.com/" style="color: inherit;">Scoreaxis</a>';
+            
+            container.appendChild(script);
+            container.appendChild(linkDiv);
+        }
     }
+
+    window.dispatchEvent(new Event('resize'));
 
     // Stop the game if we leave the game tab
     if (tabId !== 'game') {
