@@ -141,8 +141,8 @@ function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Faster strafing speed (7)
-    if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 9; player.facing = 'left'; }
-    if (keys['ArrowRight'] || keys['KeyD']) { player.x += 9; player.facing = 'right'; }
+    if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 7; player.facing = 'left'; }
+    if (keys['ArrowRight'] || keys['KeyD']) { player.x += 7; player.facing = 'right'; }
 
     player.dy += player.grav;
     player.y += player.dy;
