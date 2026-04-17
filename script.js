@@ -21,7 +21,20 @@ function showTab(tabId) {
     }
     
     // WAKE UP THE WIDGET
-    window.dispatchEvent(new Event('resize'));
+    // We target your specific widget ID to force a re-render
+    if (tabId === 'barca') {
+        setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+            const widget = document.getElementById('widget-8fhkmo3eac2k');
+            if (widget) {
+                widget.style.display = 'none';
+                widget.offsetHeight; // Force reflow
+                widget.style.display = 'block';
+            }
+        }, 150);
+    } else {
+        window.dispatchEvent(new Event('resize'));
+    }
 
     // Stop the game if we leave the game tab
     if (tabId !== 'game') {
@@ -105,7 +118,6 @@ function generatePlatform(yStart) {
 }
 
 function shoot() {
-    // Bullet speed is controlled in gameLoop (b.y -= 7)
     bullets.push({ x: player.x + player.w / 2 - 3, y: player.y, w: 6, h: 12 });
 }
 
@@ -140,7 +152,7 @@ function gameLoop() {
     if (!isPlaying) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Faster strafing speed (7)
+    // Speed tweaks left untouched per instructions
     if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 7; player.facing = 'left'; }
     if (keys['ArrowRight'] || keys['KeyD']) { player.x += 7; player.facing = 'right'; }
 
@@ -170,7 +182,6 @@ function gameLoop() {
     let trunkWidth = player.w - bodyWidth;
     let hitboxX = (player.facing === 'right') ? player.x : player.x + trunkWidth;
 
-    // Predictive bullets (Speed 7)
     bullets.forEach((b, i) => {
         b.y -= 7; 
         ctx.fillStyle = "#2D3748";
@@ -196,8 +207,6 @@ function gameLoop() {
 
     platforms.forEach(p => {
         ctx.fillStyle = "#48bb78";
-        
-        // DRAW ROUNDED PLATFORMS
         ctx.beginPath();
         if (ctx.roundRect) {
             ctx.roundRect(p.x, p.y, p.w, p.h, 6);
