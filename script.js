@@ -18,7 +18,6 @@ function showTab(tabId) {
     }
     
     // 2. Simple "Wake Up" - No forcing/reloading scripts
-    // This tells the browser to recalculate layouts for any visible widgets
     setTimeout(() => {
         window.dispatchEvent(new Event('resize'));
     }, 50);
@@ -79,8 +78,8 @@ playerImg.src = 'character.png';
 let player = { 
     x: 135, y: 400, w: 60, h: 48, 
     dy: 0, 
-    jump: -12,    // Buffed jump height
-    grav: 0.4,    // Kept floaty gravity
+    jump: -12,    
+    grav: 0.4,    
     facing: 'right' 
 };
 
@@ -100,7 +99,7 @@ function generatePlatform(yStart) {
         x: Math.random() * (canvas.width - 50), 
         y: yStart, w: 50, h: 12, 
         type: Math.random() < 0.15 ? 'spring' : 'normal', 
-        rocket: Math.random() < 0.01 // Rocket is now much rarer (1%)
+        rocket: Math.random() < 0.01 
     };
 }
 
@@ -139,7 +138,6 @@ function gameLoop() {
     if (!isPlaying) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Speed tweaks left untouched per instructions
     if (keys['ArrowLeft'] || keys['KeyA']) { player.x -= 7; player.facing = 'left'; }
     if (keys['ArrowRight'] || keys['KeyD']) { player.x += 7; player.facing = 'right'; }
 
@@ -152,18 +150,36 @@ function gameLoop() {
     if (score >= 1000 && !boss.defeated && !boss.active) boss.active = true;
 
     if (boss.active) {
-        if (boss.y < 50) boss.y += 1;
+        if (boss.y < 50) boss.y += 1; // Boss floats into view
         boss.x += boss.dx;
         if (boss.x <= 0 || boss.x + boss.w >= canvas.width) boss.dx *= -1;
+        
+        // Boss Shooting Logic
         if (Date.now() - boss.lastShot > 1500) {
             bossBullets.push({ x: boss.x + boss.w/2, y: boss.y + boss.h, w: 10, h: 10 });
             boss.lastShot = Date.now();
         }
+        
         ctx.fillStyle = "#e53e3e";
         ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
         ctx.fillStyle = "red";
         ctx.fillRect(10, 10, boss.hp * 20, 10);
     }
+
+    // Move and Draw Boss Bullets
+    bossBullets.forEach((bb, i) => {
+        bb.y += 4; 
+        ctx.fillStyle = "#f6e05e"; // Yellow bullets
+        ctx.fillRect(bb.x, bb.y, bb.w, bb.h);
+
+        // Collision with player
+        if (bb.x < player.x + player.w && bb.x + bb.w > player.x &&
+            bb.y < player.y + player.h && bb.y + bb.h > player.y) {
+            isPlaying = false;
+            alert("The Boss got you! Score: " + score);
+        }
+        if (bb.y > canvas.height) bossBullets.splice(i, 1);
+    });
 
     let bodyWidth = player.w * 0.67; 
     let trunkWidth = player.w - bodyWidth;
@@ -189,7 +205,7 @@ function gameLoop() {
             if (p.y > canvas.height) { Object.assign(p, generatePlatform(0)); score += 10; }
         });
         document.getElementById('jumpScore').innerText = score;
-        if (boss.active) boss.y += offset * 0.2;
+        // Boss does NOT get offset anymore, keeping it locked at its current screen Y
     }
 
     platforms.forEach(p => {
@@ -202,17 +218,15 @@ function gameLoop() {
         }
         ctx.fill();
 
-        // Draw Spring
         if (p.type === 'spring') { 
             ctx.fillStyle = "#a0aec0"; 
             ctx.fillRect(p.x + 15, p.y - 8, 20, 8); 
         }
 
-        // Draw Rocket (Visual fix)
         if (p.rocket) {
-            ctx.fillStyle = "#ed8936"; // Orange rocket body
+            ctx.fillStyle = "#ed8936"; 
             ctx.fillRect(p.x + 20, p.y - 15, 10, 15);
-            ctx.fillStyle = "#f6e05e"; // Yellow flame
+            ctx.fillStyle = "#f6e05e"; 
             ctx.fillRect(p.x + 22, p.y - 5, 6, 5);
         }
         
@@ -223,11 +237,11 @@ function gameLoop() {
             player.y + player.h < p.y + p.h + 10) {
             
             if (p.rocket) { 
-                player.dy = -50; // Super high rocket boost
+                player.dy = -50; 
                 p.rocket = false; 
             }
             else if (p.type === 'spring') {
-                player.dy = -30; // Spring takes you high like the real game
+                player.dy = -30; 
             }
             else {
                 player.dy = player.jump;
