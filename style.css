@@ -3,7 +3,58 @@ body {
     background-color: #f0f2f5;
     color: #1c1e21;
     margin: 0;
-    padding: 20px;
+    padding: 0; /* Changed to 0 so toolbar hits the edges */
+}
+
+/* Toolbar Styling - Updated for top-right account icon */
+.toolbar {
+    background: #fff;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between; /* Pushes nav to left/center and account to right */
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 10px;
+}
+
+/* Pill-shaped Navigation Buttons */
+.nav-btn {
+    background: none;
+    border: none;
+    font-weight: bold;
+    color: #718096;
+    cursor: pointer;
+    padding: 8px 24px; /* Wider padding for the pill look */
+    border-radius: 50px; /* Semicircle sides */
+    transition: 0.3s;
+}
+
+.nav-btn.active {
+    background: #4A90E2;
+    color: white;
+}
+
+/* Account/User Icon styling */
+.account-zone {
+    display: flex;
+    align-items: center;
+}
+
+#user-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 2px solid #4A90E2;
+    object-fit: cover;
+    cursor: pointer;
 }
 
 .container {
@@ -12,9 +63,10 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
+    padding: 0 15px; /* Added padding for mobile breathing room */
 }
 
-h1 { text-align: center; color: #4A90E2; }
+h1 { text-align: center; color: #4A90E2; margin-top: 10px; }
 
 .card {
     background: white;
@@ -25,6 +77,7 @@ h1 { text-align: center; color: #4A90E2; }
 
 h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
 
+/* Game Box & Canvas */
 .game-box {
     display: flex;
     flex-direction: column;
@@ -37,8 +90,12 @@ canvas {
     border-radius: 8px;
     width: 100%;
     max-width: 300px;
+    touch-action: none; 
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
 }
 
+/* Buttons & UI */
 .btn {
     background: #4A90E2;
     color: white;
@@ -52,64 +109,23 @@ canvas {
 .btn:hover { background: #357abd; }
 
 .chat {
-    height: 150px;
-    background: #f9f9f9;
-    border: 1px solid #eee;
+    height: 200px; /* Made slightly taller for AI assistant */
+    background: #fdfdfd;
+    border: 1px solid #edf2f7;
     margin-bottom: 10px;
     padding: 10px;
     overflow-y: auto;
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 .input-group { display: flex; gap: 10px; }
 input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-/* Toolbar Styling */
-.toolbar {
-    background: #fff;
-    padding: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-}
-
-.nav-btn {
-    background: none;
-    border: none;
-    font-weight: bold;
-    color: #718096;
-    cursor: pointer;
-    padding: 8px 16px;
-    border-radius: 20px;
-    transition: 0.3s;
-}
-
-.nav-btn.active {
-    background: #4A90E2;
-    color: white;
-}
 
 /* Tab Logic */
 .tab-content {
-    display: none; /* Hide everything by default */
+    display: none; 
 }
 
 .tab-content.active {
-    display: block; /* Only show the active one */
-}
-
-canvas {
-    background: #fafafa;
-    border: 1px solid #ddd;
-    border-radius: 8px;
-    width: 100%;
-    max-width: 300px;
-    /* --- Add these for Mobile --- */
-    touch-action: none; 
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
+    display: block;
 }
