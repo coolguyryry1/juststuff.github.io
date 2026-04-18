@@ -3,18 +3,30 @@ let bestScore = 0;
 let playerName = ""; 
 let moveLeft = false;
 let moveRight = false;
+let userEmail = null;
+let userID = null; // New: To track Google User ID
 
 // Generate or retrieve a unique ID for this browser instance
 let playerID = localStorage.getItem('player_uuid') || 
                (localStorage.setItem('player_uuid', 'id_' + Math.random().toString(36).substr(2, 9)), 
                 localStorage.getItem('player_uuid'));
 
+// --- 1. Navigation Logic (Pill Highlight) ---
 function showTab(tabId) {
+    // Update Tabs
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const activeTab = document.getElementById(tabId);
     if (activeTab) activeTab.classList.add('active');
     
+    // Update Pill Buttons
+    document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('active');
+        // Match the text of the button to the tabId
+        if (btn.innerText.toLowerCase() === tabId.toLowerCase()) {
+            btn.classList.add('active');
+        }
+    });
+
     setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
 
     if (tabId !== 'game') {
@@ -23,18 +35,69 @@ function showTab(tabId) {
     }
 }
 
-// --- 1. Google Login & Calendar ---
-function handleCredentialResponse(response) {
+// --- 2. Google Login & Calendar Sync ---
+async function handleCredentialResponse(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    const email = payload.email;
-    document.getElementById('user-email').innerText = email;
+    userEmail = payload.email;
+    userID = payload.sub; // The unique Google ID
+    playerName = payload.given_name || payload.name;
+
+    // Update Top-Right Profile UI
+    document.querySelector('.g_id_signin').style.display = 'none';
+    const profileDiv = document.getElementById('user-profile');
+    const avatarImg = document.getElementById('user-avatar');
+    if (profileDiv && avatarImg) {
+        profileDiv.style.display = 'block';
+        avatarImg.src = payload.picture; // Google profile pic
+    }
+
+    // Update Calendar in Home Tab
+    document.getElementById('user-email').innerText = userEmail;
     document.getElementById('calendar-container').style.display = 'block';
     const iframe = document.getElementById('google-calendar-iframe');
-    iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(email)}&ctz=America%2FNew_York`;
-    document.querySelector('.g_id_signin').style.display = 'none';
+    iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(userEmail)}&ctz=America%2FNew_York`;
+
+    // Reload Cloud-saved data for this user
+    await loadUserMusic();
 }
 
-// --- 2. AI Implementation ---
+// --- 3. Spotify Logic (Persistent per User) ---
+async function loadUserMusic() {
+    const wrapper = document.getElementById('spotify-wrapper');
+    if (!wrapper) return;
+
+    // Use userID if logged in, otherwise use playerID
+    const key = userID ? `spotify_${userID}` : `spotify_${playerID}`;
+    const defaultLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DX82Zzp6Mjs64"; // Default matchday vibe
+    
+    try {
+        const savedLink = await puter.kv.get(key);
+        let finalLink = savedLink || defaultLink;
+        
+        // Auto-fix link to embed format if user just pastes a standard URL
+        if (finalLink.includes('spotify.com') && !finalLink.includes('embed')) {
+            finalLink = finalLink.replace('spotify.com/', 'spotify.com/embed/');
+        }
+
+        wrapper.innerHTML = `<iframe style="border-radius:12px" src="${finalLink}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+    } catch (e) { console.error(e); }
+}
+
+async function updateUserMusic() {
+    const input = document.getElementById('spotify-link-input');
+    let link = input.value.trim();
+    if (!link) return;
+
+    const key = userID ? `spotify_${userID}` : `spotify_${playerID}`;
+    try {
+        await puter.kv.set(key, link);
+        loadUserMusic();
+        input.value = "";
+        alert("Music updated!");
+    } catch (e) { console.error("Save failed", e); }
+}
+
+// --- 4. AI Assistant ---
 async function askAI() {
     const userInput = document.getElementById('user-input').value;
     const chatWindow = document.getElementById('chat-window');
@@ -46,7 +109,7 @@ async function askAI() {
     chatWindow.appendChild(loadingMsg);
     chatWindow.scrollTop = chatWindow.scrollHeight;
     try {
-        const response = await puter.ai.chat(`Help the user. Question: ${userInput}`);
+        const response = await puter.ai.chat(userInput);
         loadingMsg.innerHTML = `<strong>AI:</strong> ${response}`;
     } catch (error) {
         loadingMsg.innerHTML = "<strong>AI:</strong> Error loading response.";
@@ -54,7 +117,7 @@ async function askAI() {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// --- 3. Doodle Jump Core ---
+// --- 5. Doodle Jump Core & Leaderboard ---
 const canvas = document.getElementById('jumpGame');
 const ctx = canvas ? canvas.getContext('2d') : null;
 const playerImg = new Image();
@@ -96,34 +159,6 @@ function drawPlayer() {
     ctx.restore();
 }
 
-// --- 4. Mobile Touch Listeners ---
-canvas.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    const rect = canvas.getBoundingClientRect();
-    const touchX = e.touches[0].clientX - rect.left;
-    const touchY = e.touches[0].clientY - rect.top;
-
-    if (!isPlaying) {
-        if (touchX > 80 && touchX < 220 && touchY > 330 && touchY < 375) initJumpGame();
-        return;
-    }
-
-    if (touchX < canvas.width / 2) moveLeft = true;
-    else moveRight = true;
-
-    if (canShoot) {
-        shoot();
-        canShoot = false;
-    }
-}, { passive: false });
-
-canvas.addEventListener('touchend', (e) => {
-    moveLeft = false;
-    moveRight = false;
-    canShoot = true;
-}, { passive: false });
-
-// --- 5. Secure Leaderboard ---
 async function handleLeaderboard(finalScore) {
     let scores = [];
     try {
@@ -135,45 +170,34 @@ async function handleLeaderboard(finalScore) {
     }
 
     if (finalScore > 0) {
-        // Only ask for name if we don't have one saved in this session
         if (!playerName) {
             playerName = window.prompt("New High Score! Name:", "Player") || "Anonymous";
             playerName = playerName.substring(0, 10);
         }
 
-        // Find if an entry already exists for this name
+        const currentID = userID || playerID; // Google ID takes priority over local UUID
         const existingIndex = scores.findIndex(s => s.name === playerName);
 
         if (existingIndex !== -1) {
-            // Name exists. Check if it's the SAME person via playerID
-            if (scores[existingIndex].id === playerID) {
-                // Same person: update only if the new score is higher
-                if (finalScore > scores[existingIndex].score) {
-                    scores[existingIndex].score = finalScore;
-                }
+            if (scores[existingIndex].id === currentID) {
+                if (finalScore > scores[existingIndex].score) scores[existingIndex].score = finalScore;
             } else {
-                // Different person using the same name: add as new entry 
-                // (Sorting later will handle if they qualify for Top 5)
-                scores.push({ name: playerName, score: finalScore, id: playerID });
+                scores.push({ name: playerName, score: finalScore, id: currentID });
             }
         } else {
-            // Brand new name for the leaderboard
-            scores.push({ name: playerName, score: finalScore, id: playerID });
+            scores.push({ name: playerName, score: finalScore, id: currentID });
         }
 
-        // Sort: Highest score first
         scores.sort((a, b) => b.score - a.score);
-        
-        // Keep only top 5
         scores = scores.slice(0, 5);
 
-        // Save to Puter and Local Fallback
         try { await puter.kv.set('global_leaderboard', JSON.stringify(scores)); } catch(e){}
         localStorage.setItem('local_leaderboard', JSON.stringify(scores));
     }
     return scores;
 }
 
+// (Existing game functions like drawGameOverScreen, initJumpGame, gameLoop remain the same)
 function drawGameOverScreen(leaderboardData) {
     ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -226,14 +250,6 @@ function initJumpGame() {
     gameLoop();
 }
 
-canvas.addEventListener('mousedown', (e) => {
-    if (isPlaying) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    if (x > 80 && x < 220 && y > 330 && y < 375) initJumpGame();
-});
-
 function gameLoop() {
     if (!isPlaying) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -259,8 +275,6 @@ function gameLoop() {
         }
         ctx.fillStyle = "#e53e3e";
         ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
-        ctx.fillStyle = "red";
-        ctx.fillRect(10, 10, boss.hp * 20, 10);
     }
 
     bossBullets.forEach((bb, i) => {
@@ -297,15 +311,15 @@ function gameLoop() {
 
     platforms.forEach(p => {
         ctx.fillStyle = "#48bb78";
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(p.x, p.y, p.w, p.h, 6);
-        else ctx.fillRect(p.x, p.y, p.w, p.h);
-        ctx.fill();
+        if (ctx.roundRect) {
+            ctx.beginPath();
+            ctx.roundRect(p.x, p.y, p.w, p.h, 6);
+            ctx.fill();
+        } else { ctx.fillRect(p.x, p.y, p.w, p.h); }
 
         if (p.type === 'spring') { ctx.fillStyle = "#a0aec0"; ctx.fillRect(p.x + 15, p.y - 8, 20, 8); }
         if (p.rocket) {
             ctx.fillStyle = "#ed8936"; ctx.fillRect(p.x + 20, p.y - 15, 10, 15);
-            ctx.fillStyle = "#f6e05e"; ctx.fillRect(p.x + 22, p.y - 5, 6, 5);
         }
         
         if (player.dy > 0 && player.x < p.x + p.w && player.x + player.w > p.x && 
@@ -322,6 +336,10 @@ function gameLoop() {
     else anim = requestAnimationFrame(gameLoop);
 }
 
+// Initial Run
+loadUserMusic();
+
+// Event Listeners for Game
 window.addEventListener('keydown', (e) => {
     keys[e.code] = true;
     if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') && isPlaying && canShoot) {
@@ -330,8 +348,14 @@ window.addEventListener('keydown', (e) => {
         canShoot = false; 
     }
 });
-
 window.addEventListener('keyup', (e) => {
     keys[e.code] = false;
     if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') canShoot = true;
+});
+canvas.addEventListener('mousedown', (e) => {
+    if (isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (x > 80 && x < 220 && y > 330 && y < 375) initJumpGame();
 });
