@@ -1,28 +1,15 @@
+// Global Best Score variable
+let bestScore = 0;
+
 function showTab(tabId) {
-    // 1. Standard Tab Switching
-    document.querySelectorAll('.tab-content').forEach(tab => {
-        tab.classList.remove('active');
-    });
-
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-
+    document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
     const activeTab = document.getElementById(tabId);
-    if (activeTab) {
-        activeTab.classList.add('active');
-    }
-
-    if (event && event.currentTarget) {
-        event.currentTarget.classList.add('active');
-    }
+    if (activeTab) activeTab.classList.add('active');
+    if (event && event.currentTarget) event.currentTarget.classList.add('active');
     
-    // 2. Simple "Wake Up" - No forcing/reloading scripts
-    setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-    }, 50);
+    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 50);
 
-    // 3. Stop the game if we leave the game tab
     if (tabId !== 'game') {
         isPlaying = false;
         if (anim) cancelAnimationFrame(anim);
@@ -33,13 +20,10 @@ function showTab(tabId) {
 function handleCredentialResponse(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     const email = payload.email;
-
     document.getElementById('user-email').innerText = email;
     document.getElementById('calendar-container').style.display = 'block';
-    
     const iframe = document.getElementById('google-calendar-iframe');
     iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(email)}&ctz=America%2FNew_York`;
-    
     document.querySelector('.g_id_signin').style.display = 'none';
 }
 
@@ -47,42 +31,29 @@ function handleCredentialResponse(response) {
 async function askAI() {
     const userInput = document.getElementById('user-input').value;
     const chatWindow = document.getElementById('chat-window');
-
     if (!userInput) return;
-
     chatWindow.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
     document.getElementById('user-input').value = "";
-    
     const loadingMsg = document.createElement("p");
     loadingMsg.innerHTML = "<strong>AI:</strong> Thinking...";
     chatWindow.appendChild(loadingMsg);
     chatWindow.scrollTop = chatWindow.scrollHeight;
-
     try {
-        const response = await puter.ai.chat(`Help the user the most you can with whatever they ask, try to keep responses short unless specifically told to have a longer answer. Question: ${userInput}`);
+        const response = await puter.ai.chat(`Help the user the most you can with whatever they ask. Question: ${userInput}`);
         loadingMsg.innerHTML = `<strong>AI:</strong> ${response}`;
     } catch (error) {
-        loadingMsg.innerHTML = "<strong>AI:</strong> Sorry I couldnt load a response. Try again!";
+        loadingMsg.innerHTML = "<strong>AI:</strong> Sorry I couldnt load a response.";
     }
-
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// --- 3. Doodle Jump (The Stuff-ling Edition) ---
+// --- 3. Doodle Jump ---
 const canvas = document.getElementById('jumpGame');
 const ctx = canvas ? canvas.getContext('2d') : null;
-
 const playerImg = new Image();
 playerImg.src = 'character.png'; 
 
-let player = { 
-    x: 135, y: 400, w: 60, h: 48, 
-    dy: 0, 
-    jump: -12,    
-    grav: 0.4,    
-    facing: 'right' 
-};
-
+let player = { x: 135, y: 400, w: 60, h: 48, dy: 0, jump: -12, grav: 0.4, facing: 'right' };
 let platforms = [];
 let bullets = [];
 let bossBullets = [];
@@ -91,7 +62,6 @@ let isPlaying = false;
 let anim;
 let keys = {};
 let canShoot = true;
-
 let boss = { active: false, hp: 10, x: 100, y: -100, w: 100, h: 80, dx: 2, lastShot: 0, defeated: false };
 
 function generatePlatform(yStart) {
@@ -125,14 +95,56 @@ function initJumpGame() {
     platforms = []; bullets = []; bossBullets = [];
     boss.active = false; boss.hp = 10; boss.y = -100; boss.defeated = false;
     document.getElementById('jumpScore').innerText = score;
-    
     platforms.push({ x: 125, y: 450, w: 50, h: 12, type: 'normal', rocket: false });
     for (let i = 0; i < 6; i++) platforms.push(generatePlatform(i * 75));
-    
     if (anim) cancelAnimationFrame(anim);
     isPlaying = true;
     gameLoop();
 }
+
+function gameOver() {
+    isPlaying = false;
+    if (anim) cancelAnimationFrame(anim);
+    if (score > bestScore) bestScore = score;
+
+    // Menu Overlay
+    ctx.fillStyle = "rgba(0, 0, 0, 0.75)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.font = "bold 32px Arial";
+    ctx.fillText("GAME OVER", canvas.width / 2, 180);
+    
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score, canvas.width / 2, 225);
+    ctx.fillText("Best: " + bestScore, canvas.width / 2, 255);
+
+    // Play Again Button
+    ctx.fillStyle = "#4A90E2";
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(canvas.width / 2 - 70, 300, 140, 45, 10);
+        ctx.fill();
+    } else {
+        ctx.fillRect(canvas.width / 2 - 70, 300, 140, 45);
+    }
+    
+    ctx.fillStyle = "white";
+    ctx.font = "bold 18px Arial";
+    ctx.fillText("PLAY AGAIN", canvas.width / 2, 329);
+}
+
+// Click listener for Play Again button
+canvas.addEventListener('mousedown', (e) => {
+    if (isPlaying) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if (x > 80 && x < 220 && y > 300 && y < 345) {
+        initJumpGame();
+    }
+});
 
 function gameLoop() {
     if (!isPlaying) return;
@@ -150,40 +162,29 @@ function gameLoop() {
     if (score >= 1000 && !boss.defeated && !boss.active) boss.active = true;
 
     if (boss.active) {
-        if (boss.y < 50) boss.y += 1; // Boss floats into view
+        if (boss.y < 50) boss.y += 1;
         boss.x += boss.dx;
         if (boss.x <= 0 || boss.x + boss.w >= canvas.width) boss.dx *= -1;
-        
-        // Boss Shooting Logic
         if (Date.now() - boss.lastShot > 1500) {
             bossBullets.push({ x: boss.x + boss.w/2, y: boss.y + boss.h, w: 10, h: 10 });
             boss.lastShot = Date.now();
         }
-        
         ctx.fillStyle = "#e53e3e";
         ctx.fillRect(boss.x, boss.y, boss.w, boss.h);
         ctx.fillStyle = "red";
         ctx.fillRect(10, 10, boss.hp * 20, 10);
     }
 
-    // Move and Draw Boss Bullets
     bossBullets.forEach((bb, i) => {
         bb.y += 4; 
-        ctx.fillStyle = "#f6e05e"; // Yellow bullets
+        ctx.fillStyle = "#f6e05e";
         ctx.fillRect(bb.x, bb.y, bb.w, bb.h);
-
-        // Collision with player
         if (bb.x < player.x + player.w && bb.x + bb.w > player.x &&
             bb.y < player.y + player.h && bb.y + bb.h > player.y) {
-            isPlaying = false;
-            alert("The Boss got you! Score: " + score);
+            gameOver();
         }
         if (bb.y > canvas.height) bossBullets.splice(i, 1);
     });
-
-    let bodyWidth = player.w * 0.67; 
-    let trunkWidth = player.w - bodyWidth;
-    let hitboxX = (player.facing === 'right') ? player.x : player.x + trunkWidth;
 
     bullets.forEach((b, i) => {
         b.y -= 7; 
@@ -205,53 +206,39 @@ function gameLoop() {
             if (p.y > canvas.height) { Object.assign(p, generatePlatform(0)); score += 10; }
         });
         document.getElementById('jumpScore').innerText = score;
-        // Boss does NOT get offset anymore, keeping it locked at its current screen Y
+        // Boss and Boss Bullets are NOT offset, keeping them locked to current screen Y
     }
+
+    let bodyWidth = player.w * 0.67; 
+    let trunkWidth = player.w - bodyWidth;
+    let hitboxX = (player.facing === 'right') ? player.x : player.x + trunkWidth;
 
     platforms.forEach(p => {
         ctx.fillStyle = "#48bb78";
         ctx.beginPath();
-        if (ctx.roundRect) {
-            ctx.roundRect(p.x, p.y, p.w, p.h, 6);
-        } else {
-            ctx.fillRect(p.x, p.y, p.w, p.h); 
-        }
+        if (ctx.roundRect) { ctx.roundRect(p.x, p.y, p.w, p.h, 6); } 
+        else { ctx.fillRect(p.x, p.y, p.w, p.h); }
         ctx.fill();
 
         if (p.type === 'spring') { 
-            ctx.fillStyle = "#a0aec0"; 
-            ctx.fillRect(p.x + 15, p.y - 8, 20, 8); 
+            ctx.fillStyle = "#a0aec0"; ctx.fillRect(p.x + 15, p.y - 8, 20, 8); 
         }
-
         if (p.rocket) {
-            ctx.fillStyle = "#ed8936"; 
-            ctx.fillRect(p.x + 20, p.y - 15, 10, 15);
-            ctx.fillStyle = "#f6e05e"; 
-            ctx.fillRect(p.x + 22, p.y - 5, 6, 5);
+            ctx.fillStyle = "#ed8936"; ctx.fillRect(p.x + 20, p.y - 15, 10, 15);
+            ctx.fillStyle = "#f6e05e"; ctx.fillRect(p.x + 22, p.y - 5, 6, 5);
         }
         
-        if (player.dy > 0 && 
-            hitboxX < p.x + p.w && 
-            hitboxX + bodyWidth > p.x && 
-            player.y + player.h > p.y && 
-            player.y + player.h < p.y + p.h + 10) {
-            
-            if (p.rocket) { 
-                player.dy = -50; 
-                p.rocket = false; 
-            }
-            else if (p.type === 'spring') {
-                player.dy = -30; 
-            }
-            else {
-                player.dy = player.jump;
-            }
+        if (player.dy > 0 && hitboxX < p.x + p.w && hitboxX + bodyWidth > p.x && 
+            player.y + player.h > p.y && player.y + player.h < p.y + p.h + 10) {
+            if (p.rocket) { player.dy = -50; p.rocket = false; }
+            else if (p.type === 'spring') { player.dy = -30; }
+            else { player.dy = player.jump; }
         }
     });
 
     drawPlayer();
 
-    if (player.y > canvas.height) { isPlaying = false; alert("Game Over! Score: " + score); } 
+    if (player.y > canvas.height) { gameOver(); } 
     else anim = requestAnimationFrame(gameLoop);
 }
 
