@@ -4,6 +4,11 @@ let playerName = "";
 let moveLeft = false;
 let moveRight = false;
 
+// Generate or retrieve a unique ID for this browser instance
+let playerID = localStorage.getItem('player_uuid') || 
+               (localStorage.setItem('player_uuid', 'id_' + Math.random().toString(36).substr(2, 9)), 
+                localStorage.getItem('player_uuid'));
+
 function showTab(tabId) {
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
@@ -99,16 +104,13 @@ canvas.addEventListener('touchstart', (e) => {
     const touchY = e.touches[0].clientY - rect.top;
 
     if (!isPlaying) {
-        // Tap to restart check
         if (touchX > 80 && touchX < 220 && touchY > 330 && touchY < 375) initJumpGame();
         return;
     }
 
-    // Steering
     if (touchX < canvas.width / 2) moveLeft = true;
     else moveRight = true;
 
-    // Shooting
     if (canShoot) {
         shoot();
         canShoot = false;
@@ -121,7 +123,7 @@ canvas.addEventListener('touchend', (e) => {
     canShoot = true;
 }, { passive: false });
 
-// --- 5. Leaderboard ---
+// --- 5. Secure Leaderboard ---
 async function handleLeaderboard(finalScore) {
     let scores = [];
     try {
@@ -132,15 +134,40 @@ async function handleLeaderboard(finalScore) {
         scores = localData ? JSON.parse(localData) : [];
     }
 
-    const qualifies = scores.length < 5 || finalScore > scores[scores.length - 1].score;
-
-    if (qualifies && finalScore > 0) {
+    if (finalScore > 0) {
+        // Only ask for name if we don't have one saved in this session
         if (!playerName) {
             playerName = window.prompt("New High Score! Name:", "Player") || "Anonymous";
+            playerName = playerName.substring(0, 10);
         }
-        scores.push({ name: playerName.substring(0, 10), score: finalScore });
+
+        // Find if an entry already exists for this name
+        const existingIndex = scores.findIndex(s => s.name === playerName);
+
+        if (existingIndex !== -1) {
+            // Name exists. Check if it's the SAME person via playerID
+            if (scores[existingIndex].id === playerID) {
+                // Same person: update only if the new score is higher
+                if (finalScore > scores[existingIndex].score) {
+                    scores[existingIndex].score = finalScore;
+                }
+            } else {
+                // Different person using the same name: add as new entry 
+                // (Sorting later will handle if they qualify for Top 5)
+                scores.push({ name: playerName, score: finalScore, id: playerID });
+            }
+        } else {
+            // Brand new name for the leaderboard
+            scores.push({ name: playerName, score: finalScore, id: playerID });
+        }
+
+        // Sort: Highest score first
         scores.sort((a, b) => b.score - a.score);
+        
+        // Keep only top 5
         scores = scores.slice(0, 5);
+
+        // Save to Puter and Local Fallback
         try { await puter.kv.set('global_leaderboard', JSON.stringify(scores)); } catch(e){}
         localStorage.setItem('local_leaderboard', JSON.stringify(scores));
     }
@@ -211,7 +238,6 @@ function gameLoop() {
     if (!isPlaying) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Movement Logic (Keyboard + Mobile)
     if (keys['ArrowLeft'] || keys['KeyA'] || moveLeft) { player.x -= 7; player.facing = 'left'; }
     if (keys['ArrowRight'] || keys['KeyD'] || moveRight) { player.x += 7; player.facing = 'right'; }
 
