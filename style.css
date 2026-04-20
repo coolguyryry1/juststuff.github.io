@@ -5,14 +5,14 @@
     --card-bg: #ffffff;
     --toolbar-bg: #ffffff;
     --chat-bg: #fdfdfd;
-    --border-color: #f0f2f5;
+    --border-color: #e2e8f0;
     --input-bg: #ffffff;
 }
 
 body.dark-theme {
     --bg-color: #18191a;
     --text-color: #e4e6eb;
-    --card-bg: #242526;
+    --card-bg: #242526; /* Solid card background for dark mode */
     --toolbar-bg: #242526;
     --chat-bg: #18191a;
     --border-color: #3a3b3c;
@@ -95,6 +95,21 @@ h2 {
 }
 
 /* --- 3. UI Components --- */
+/* Settings Page Styling */
+.settings-content {
+    background-color: var(--card-bg); /* Pulls solid white or solid dark grey */
+    color: var(--text-color);
+    margin: 15vh auto;
+    padding: 30px;
+    border-radius: 16px;
+    width: 280px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Strong shadow for depth */
+    border: 1px solid var(--border-color);
+    position: relative;
+    transition: background-color 0.3s ease;
+}
+
 .chat {
     height: 200px;
     background: var(--chat-bg);
@@ -130,7 +145,7 @@ input {
 
 /* --- 4. Toast Notifications --- */
 .toast {
-    background: #48bb78; /* Green */
+    background: #48bb78;
     color: white;
     padding: 15px 25px;
     border-radius: 8px;
@@ -163,11 +178,6 @@ input {
 @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
-}
-
-@keyframes progressAnim {
-    from { width: 100%; }
-    to { width: 0%; }
 }
 
 /* --- 5. Game & Tab Logic --- */
