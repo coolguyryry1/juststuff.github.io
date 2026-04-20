@@ -1,17 +1,39 @@
-body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f0f2f5;
-    color: #1c1e21;
-    margin: 0;
-    padding: 0; /* Changed to 0 so toolbar hits the edges */
+/* --- 1. Theme Variables --- */
+:root {
+    --bg-color: #f0f2f5;
+    --text-color: #1c1e21;
+    --card-bg: #ffffff;
+    --toolbar-bg: #ffffff;
+    --chat-bg: #fdfdfd;
+    --border-color: #f0f2f5;
+    --input-bg: #ffffff;
 }
 
-/* Toolbar Styling - Updated for top-right account icon */
+body.dark-theme {
+    --bg-color: #18191a;
+    --text-color: #e4e6eb;
+    --card-bg: #242526;
+    --toolbar-bg: #242526;
+    --chat-bg: #18191a;
+    --border-color: #3a3b3c;
+    --input-bg: #3a3b3c;
+}
+
+/* --- 2. Base Styles --- */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
 .toolbar {
-    background: #fff;
+    background: var(--toolbar-bg);
     padding: 10px 20px;
     display: flex;
-    justify-content: space-between; /* Pushes nav to left/center and account to right */
+    justify-content: space-between;
     align-items: center;
     position: sticky;
     top: 0;
@@ -20,32 +42,22 @@ body {
     margin-bottom: 20px;
 }
 
-.nav-links {
-    display: flex;
-    gap: 10px;
-}
+.nav-links { display: flex; gap: 10px; }
 
-/* Pill-shaped Navigation Buttons */
 .nav-btn {
     background: none;
     border: none;
     font-weight: bold;
     color: #718096;
     cursor: pointer;
-    padding: 8px 24px; /* Wider padding for the pill look */
-    border-radius: 50px; /* Semicircle sides */
+    padding: 8px 24px;
+    border-radius: 50px;
     transition: 0.3s;
 }
 
 .nav-btn.active {
     background: #4A90E2;
     color: white;
-}
-
-/* Account/User Icon styling */
-.account-zone {
-    display: flex;
-    align-items: center;
 }
 
 #user-avatar {
@@ -63,39 +75,47 @@ body {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    padding: 0 15px; /* Added padding for mobile breathing room */
+    padding: 0 15px;
 }
 
 h1 { text-align: center; color: #4A90E2; margin-top: 10px; }
 
 .card {
-    background: white;
+    background: var(--card-bg);
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
 
-h2 { margin-top: 0; font-size: 1.2rem; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
-
-/* Game Box & Canvas */
-.game-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+h2 { 
+    margin-top: 0; 
+    font-size: 1.2rem; 
+    border-bottom: 2px solid var(--border-color); 
+    padding-bottom: 10px; 
 }
 
-canvas {
-    background: #fafafa;
-    border: 1px solid #ddd;
+/* --- 3. UI Components --- */
+.chat {
+    height: 200px;
+    background: var(--chat-bg);
+    border: 1px solid var(--border-color);
+    margin-bottom: 10px;
+    padding: 10px;
+    overflow-y: auto;
     border-radius: 8px;
-    width: 100%;
-    max-width: 300px;
-    touch-action: none; 
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
 }
 
-/* Buttons & UI */
+.input-group { display: flex; gap: 10px; }
+
+input { 
+    flex: 1; 
+    padding: 10px; 
+    background: var(--input-bg);
+    color: var(--text-color);
+    border: 1px solid var(--border-color); 
+    border-radius: 6px; 
+}
+
 .btn {
     background: #4A90E2;
     color: white;
@@ -108,24 +128,61 @@ canvas {
 
 .btn:hover { background: #357abd; }
 
-.chat {
-    height: 200px; /* Made slightly taller for AI assistant */
-    background: #fdfdfd;
-    border: 1px solid #edf2f7;
-    margin-bottom: 10px;
-    padding: 10px;
-    overflow-y: auto;
+/* --- 4. Toast Notifications --- */
+.toast {
+    background: #48bb78; /* Green */
+    color: white;
+    padding: 15px 25px;
     border-radius: 8px;
+    margin-bottom: 10px;
+    position: relative;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: slideIn 0.3s ease-out;
 }
 
-.input-group { display: flex; gap: 10px; }
-input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-
-/* Tab Logic */
-.tab-content {
-    display: none; 
+.toast-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.8;
 }
 
-.tab-content.active {
-    display: block;
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: rgba(255,255,255,0.5);
+    width: 100%;
+    border-bottom-left-radius: 8px;
 }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes progressAnim {
+    from { width: 100%; }
+    to { width: 0%; }
+}
+
+/* --- 5. Game & Tab Logic --- */
+.game-box { display: flex; flex-direction: column; align-items: center; }
+
+canvas {
+    background: #fafafa;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 300px;
+    touch-action: none; 
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
