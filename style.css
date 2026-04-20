@@ -12,7 +12,7 @@
 body.dark-theme {
     --bg-color: #18191a;
     --text-color: #e4e6eb;
-    --card-bg: #242526; /* Solid card background for dark mode */
+    --card-bg: #242526;
     --toolbar-bg: #242526;
     --chat-bg: #18191a;
     --border-color: #3a3b3c;
@@ -95,16 +95,15 @@ h2 {
 }
 
 /* --- 3. UI Components --- */
-/* Settings Page Styling */
 .settings-content {
-    background-color: var(--card-bg); /* Pulls solid white or solid dark grey */
+    background-color: var(--card-bg);
     color: var(--text-color);
     margin: 15vh auto;
     padding: 30px;
     border-radius: 16px;
     width: 280px;
     text-align: center;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5); /* Strong shadow for depth */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     border: 1px solid var(--border-color);
     position: relative;
     transition: background-color 0.3s ease;
@@ -145,7 +144,7 @@ input {
 
 /* --- 4. Toast Notifications --- */
 .toast {
-    background: #48bb78;
+    background: #48bb78; /* Default Green Success */
     color: white;
     padding: 15px 25px;
     border-radius: 8px;
@@ -156,13 +155,9 @@ input {
     animation: slideIn 0.3s ease-out;
 }
 
-.toast-close {
-    position: absolute;
-    top: 5px;
-    right: 10px;
-    cursor: pointer;
-    font-size: 14px;
-    opacity: 0.8;
+/* Error Toast Logic */
+.toast.error {
+    background: #e53e3e; /* Red Background for Errors */
 }
 
 .toast-progress {
@@ -181,7 +176,12 @@ input {
 }
 
 /* --- 5. Game & Tab Logic --- */
-.game-box { display: flex; flex-direction: column; align-items: center; }
+.game-container {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    margin: 0 auto;
+}
 
 canvas {
     background: #fafafa;
@@ -196,3 +196,57 @@ canvas {
 
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+/* --- 6. Mobile Controls & Buttons --- */
+.shoot-btn, .mobile-only-btn, .mobile-only-text {
+    display: none; /* Hidden on Desktop */
+}
+
+/* Mobile/Touch Device Rules */
+@media (pointer: coarse) {
+    .shoot-btn {
+        display: block;
+        position: absolute;
+        bottom: 20px;
+        right: 15px;
+        width: 85px;
+        height: 85px;
+        border-radius: 50%;
+        background: #ED64A6; /* Playful Pink/Red */
+        color: white;
+        border: 4px solid white;
+        font-family: 'Fredoka One', cursive; /* Playful Font */
+        font-size: 1.1rem;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        cursor: pointer;
+        z-index: 50;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .shoot-btn:active {
+        transform: scale(0.9);
+        background: #d53f8c;
+    }
+
+    .mobile-only-btn {
+        display: inline-block;
+    }
+
+    .mobile-only-text {
+        display: block;
+    }
+
+    .desktop-only-text {
+        display: none;
+    }
+}
+
+/* Full Screen Support */
+#game-container:fullscreen {
+    background-color: var(--bg-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+}
