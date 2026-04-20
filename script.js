@@ -4,24 +4,26 @@ let playerName = "";
 let moveLeft = false;
 let moveRight = false;
 let userEmail = null;
-let userID = null; // New: To track Google User ID
+let userID = null; 
+
+// Naming Logic Variables
+let isNaming = false;
+let inputName = "";
+const MAX_NAME_LENGTH = 10;
 
 // Generate or retrieve a unique ID for this browser instance
 let playerID = localStorage.getItem('player_uuid') || 
                (localStorage.setItem('player_uuid', 'id_' + Math.random().toString(36).substr(2, 9)), 
                 localStorage.getItem('player_uuid'));
 
-// --- 1. Navigation Logic (Pill Highlight) ---
+// --- 1. Navigation Logic ---
 function showTab(tabId) {
-    // Update Tabs
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     const activeTab = document.getElementById(tabId);
     if (activeTab) activeTab.classList.add('active');
     
-    // Update Pill Buttons
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
-        // Match the text of the button to the tabId
         if (btn.innerText.toLowerCase() === tabId.toLowerCase()) {
             btn.classList.add('active');
         }
@@ -31,33 +33,32 @@ function showTab(tabId) {
 
     if (tabId !== 'game') {
         isPlaying = false;
+        isNaming = false;
         if (anim) cancelAnimationFrame(anim);
     }
 }
 
-// --- 2. Google Login & Calendar Sync ---
+// --- 2. Google Login & Account Sync ---
 async function handleCredentialResponse(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
     userEmail = payload.email;
-    userID = payload.sub; // The unique Google ID
+    userID = payload.sub; 
     playerName = payload.given_name || payload.name;
 
-    // Update Top-Right Profile UI
     document.querySelector('.g_id_signin').style.display = 'none';
     const profileDiv = document.getElementById('user-profile');
     const avatarImg = document.getElementById('user-avatar');
     if (profileDiv && avatarImg) {
         profileDiv.style.display = 'block';
-        avatarImg.src = payload.picture; // Google profile pic
+        avatarImg.src = payload.picture;
     }
 
-    // Update Calendar in Home Tab
     document.getElementById('user-email').innerText = userEmail;
     document.getElementById('calendar-container').style.display = 'block';
     const iframe = document.getElementById('google-calendar-iframe');
     iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(userEmail)}&ctz=America%2FNew_York`;
 
-    // Reload Cloud-saved data for this user
+    // Sync Spotify link from cloud now that we have userID
     await loadUserMusic();
 }
 
@@ -66,16 +67,14 @@ async function loadUserMusic() {
     const wrapper = document.getElementById('spotify-wrapper');
     if (!wrapper) return;
 
-    // Use userID if logged in, otherwise use playerID
     const key = userID ? `spotify_${userID}` : `spotify_${playerID}`;
-    const defaultLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DX82Zzp6Mjs64"; // Default matchday vibe
+    const defaultLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DX1tz6oMz379j"; 
     
     try {
         const savedLink = await puter.kv.get(key);
         let finalLink = savedLink || defaultLink;
         
-        // Auto-fix link to embed format if user just pastes a standard URL
-        if (finalLink.includes('spotify.com') && !finalLink.includes('embed')) {
+        if (finalLink.includes('spotify.com') && !finalLink.includes('/embed')) {
             finalLink = finalLink.replace('spotify.com/', 'spotify.com/embed/');
         }
 
@@ -91,9 +90,8 @@ async function updateUserMusic() {
     const key = userID ? `spotify_${userID}` : `spotify_${playerID}`;
     try {
         await puter.kv.set(key, link);
-        loadUserMusic();
+        await loadUserMusic();
         input.value = "";
-        alert("Music updated!");
     } catch (e) { console.error("Save failed", e); }
 }
 
@@ -117,7 +115,7 @@ async function askAI() {
     chatWindow.scrollTop = chatWindow.scrollHeight;
 }
 
-// --- 5. Doodle Jump Core & Leaderboard ---
+// --- 5. Doodle Jump Core & Custom UI ---
 const canvas = document.getElementById('jumpGame');
 const ctx = canvas ? canvas.getContext('2d') : null;
 const playerImg = new Image();
@@ -159,6 +157,51 @@ function drawPlayer() {
     ctx.restore();
 }
 
+function drawNamingScreen() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    ctx.fillStyle = "white";
+    ctx.textAlign = "center";
+    ctx.font = "bold 22px Arial";
+    ctx.fillText("NEW HIGH SCORE!", canvas.width / 2, 120);
+    
+    ctx.font = "16px Arial";
+    ctx.fillText("Type your name:", canvas.width / 2, 160);
+
+    // Text Input Box
+    ctx.strokeStyle = "#4A90E2";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(canvas.width / 2 - 80, 180, 160, 40);
+    
+    ctx.fillStyle = "white";
+    ctx.font = "20px Courier New";
+    let cursor = (Date.now() % 1000 < 500) ? "_" : "";
+    ctx.fillText(inputName + cursor, canvas.width / 2, 208);
+
+    // Submit Button
+    ctx.fillStyle = "#48bb78";
+    if (ctx.roundRect) {
+        ctx.beginPath();
+        ctx.roundRect(canvas.width / 2 - 50, 240, 100, 40, 8);
+        ctx.fill();
+    } else { ctx.fillRect(canvas.width / 2 - 50, 240, 100, 40); }
+    
+    ctx.fillStyle = "white";
+    ctx.font = "bold 16px Arial";
+    ctx.fillText("SUBMIT", canvas.width / 2, 265);
+
+    if (isNaming) requestAnimationFrame(drawNamingScreen);
+}
+
+async function finishNaming() {
+    playerName = inputName.trim() || "Player";
+    isNaming = false;
+    drawGameOverScreen("Loading Leaderboard...");
+    const topScores = await handleLeaderboard(score);
+    drawGameOverScreen(topScores);
+}
+
 async function handleLeaderboard(finalScore) {
     let scores = [];
     try {
@@ -170,20 +213,11 @@ async function handleLeaderboard(finalScore) {
     }
 
     if (finalScore > 0) {
-        if (!playerName) {
-            playerName = window.prompt("New High Score! Name:", "Player") || "Anonymous";
-            playerName = playerName.substring(0, 10);
-        }
-
-        const currentID = userID || playerID; // Google ID takes priority over local UUID
+        const currentID = userID || playerID;
         const existingIndex = scores.findIndex(s => s.name === playerName);
 
-        if (existingIndex !== -1) {
-            if (scores[existingIndex].id === currentID) {
-                if (finalScore > scores[existingIndex].score) scores[existingIndex].score = finalScore;
-            } else {
-                scores.push({ name: playerName, score: finalScore, id: currentID });
-            }
+        if (existingIndex !== -1 && scores[existingIndex].id === currentID) {
+            if (finalScore > scores[existingIndex].score) scores[existingIndex].score = finalScore;
         } else {
             scores.push({ name: playerName, score: finalScore, id: currentID });
         }
@@ -197,9 +231,8 @@ async function handleLeaderboard(finalScore) {
     return scores;
 }
 
-// (Existing game functions like drawGameOverScreen, initJumpGame, gameLoop remain the same)
 function drawGameOverScreen(leaderboardData) {
-    ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.95)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.fillStyle = "white";
     ctx.textAlign = "center";
@@ -232,9 +265,17 @@ async function gameOver() {
     isPlaying = false;
     if (anim) cancelAnimationFrame(anim);
     if (score > bestScore) bestScore = score;
-    drawGameOverScreen("Loading...");
-    const topScores = await handleLeaderboard(score);
-    drawGameOverScreen(topScores);
+
+    // Check if we need to ask for a name (only if not logged in/no name saved)
+    if (!playerName || playerName === "Anonymous") {
+        isNaming = true;
+        inputName = "";
+        drawNamingScreen();
+    } else {
+        drawGameOverScreen("Loading...");
+        const topScores = await handleLeaderboard(score);
+        drawGameOverScreen(topScores);
+    }
 }
 
 function initJumpGame() {
@@ -247,6 +288,7 @@ function initJumpGame() {
     for (let i = 0; i < 6; i++) platforms.push(generatePlatform(i * 75));
     if (anim) cancelAnimationFrame(anim);
     isPlaying = true;
+    isNaming = false;
     gameLoop();
 }
 
@@ -318,9 +360,7 @@ function gameLoop() {
         } else { ctx.fillRect(p.x, p.y, p.w, p.h); }
 
         if (p.type === 'spring') { ctx.fillStyle = "#a0aec0"; ctx.fillRect(p.x + 15, p.y - 8, 20, 8); }
-        if (p.rocket) {
-            ctx.fillStyle = "#ed8936"; ctx.fillRect(p.x + 20, p.y - 15, 10, 15);
-        }
+        if (p.rocket) { ctx.fillStyle = "#ed8936"; ctx.fillRect(p.x + 20, p.y - 15, 10, 15); }
         
         if (player.dy > 0 && player.x < p.x + p.w && player.x + player.w > p.x && 
             player.y + player.h > p.y && player.y + player.h < p.y + p.h + 10) {
@@ -336,11 +376,14 @@ function gameLoop() {
     else anim = requestAnimationFrame(gameLoop);
 }
 
-// Initial Run
-loadUserMusic();
-
-// Event Listeners for Game
+// --- Event Listeners ---
 window.addEventListener('keydown', (e) => {
+    if (isNaming) {
+        if (e.key === "Enter" && inputName.length > 0) finishNaming();
+        else if (e.key === "Backspace") inputName = inputName.slice(0, -1);
+        else if (e.key.length === 1 && inputName.length < MAX_NAME_LENGTH) inputName += e.key;
+        return;
+    }
     keys[e.code] = true;
     if ((e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') && isPlaying && canShoot) {
         e.preventDefault();
@@ -348,14 +391,41 @@ window.addEventListener('keydown', (e) => {
         canShoot = false; 
     }
 });
+
 window.addEventListener('keyup', (e) => {
     keys[e.code] = false;
     if (e.code === 'Space' || e.code === 'KeyW' || e.code === 'ArrowUp') canShoot = true;
 });
+
 canvas.addEventListener('mousedown', (e) => {
-    if (isPlaying) return;
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
-    if (x > 80 && x < 220 && y > 330 && y < 375) initJumpGame();
+
+    if (isNaming) {
+        // Trigger mobile keyboard for naming
+        const ghostInput = document.getElementById('mobile-keyboard-trigger');
+        if (ghostInput) ghostInput.focus();
+
+        // Check Submit Button Click
+        if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
+            if (inputName.length > 0) finishNaming();
+        }
+        return;
+    }
+
+    if (!isPlaying) {
+        if (x > 80 && x < 220 && y > 330 && y < 375) initJumpGame();
+    }
 });
+
+// Mobile Keyboard Helper
+const ghostInput = document.getElementById('mobile-keyboard-trigger');
+if (ghostInput) {
+    ghostInput.addEventListener('input', (e) => {
+        if (isNaming) inputName = e.target.value.substring(0, MAX_NAME_LENGTH);
+    });
+}
+
+// Initial Run
+loadUserMusic();
