@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>stuff</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect x='0' y='0' width='45' height='45' rx='5' fill='%234A90E2'/><rect x='55' y='0' width='45' height='45' rx='5' fill='%2363B3ED'/><rect x='0' y='55' width='45' height='45' rx='5' fill='%232D3748'/><rect x='55' y='55' width='45' height='45' rx='5' fill='%23ED64A6'/></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <script src="https://js.puter.com/v2/"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -67,15 +68,30 @@
 
         <div id="game" class="tab-content">
             <section class="card">
-                <h2>Doodle Jump</h2>
-                <div class="game-box">
-                    <canvas id="jumpGame" width="300" height="500"></canvas>
-                    <input type="text" id="mobile-keyboard-trigger" style="position: absolute; opacity: 0; pointer-events: none;">
-                    <div class="controls">
-                        <p>Score: <span id="jumpScore">0</span></p>
-                        <button onclick="initJumpGame()" class="btn">Start Game</button>
-                    </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2>Doodle Jump</h2>
+                    <button onclick="toggleFullScreen()" class="btn mobile-only-btn" style="padding: 6px 12px; font-size: 12px;">⛶ Full Screen</button>
                 </div>
+
+                <div class="game-container" id="game-container">
+                    <canvas id="jumpGame" width="300" height="500"></canvas>
+                    
+                    <button id="mobile-shoot-btn" class="shoot-btn">Shoot!</button>
+                    
+                    <input type="text" id="mobile-keyboard-trigger" style="position: absolute; opacity: 0; pointer-events: none;">
+                </div>
+
+                <div class="controls" style="margin-top: 15px;">
+                    <p>Score: <span id="jumpScore" style="font-weight: bold; color: #4A90E2;">0</span></p>
+                    <button onclick="initJumpGame()" class="btn" style="width: 100%;">Start Game</button>
+                </div>
+
+                <p class="mobile-only-text" style="font-size: 11px; opacity: 0.6; margin-top: 12px; text-align: center;">
+                    Touch sides to move • Tap 'Shoot' to fire
+                </p>
+                <p class="desktop-only-text" style="font-size: 11px; opacity: 0.6; margin-top: 12px; text-align: center;">
+                    Arrows to move • Space to shoot
+                </p>
             </section>
         </div>
 
