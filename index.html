@@ -39,8 +39,7 @@
         <div id="home" class="tab-content active">
             <section class="card">
                 <h2>Vibe Check 🎵</h2>
-                <div id="spotify-wrapper">
-                    </div>
+                <div id="spotify-wrapper"></div>
                 <div style="margin-top: 15px; display: flex; gap: 5px;">
                     <input type="text" id="spotify-link-input" placeholder="Paste Spotify link here...">
                     <button class="btn" style="padding: 5px 10px; font-size: 12px;" onclick="updateUserMusic()">Set</button>
@@ -71,6 +70,7 @@
                 <h2>Doodle Jump</h2>
                 <div class="game-box">
                     <canvas id="jumpGame" width="300" height="500"></canvas>
+                    <input type="text" id="mobile-keyboard-trigger" style="position: absolute; opacity: 0; pointer-events: none;">
                     <div class="controls">
                         <p>Score: <span id="jumpScore">0</span></p>
                         <button onclick="initJumpGame()" class="btn">Start Game</button>
@@ -90,6 +90,27 @@
             </section>
         </div>
     </div>
+
+    <div id="settings-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.7);">
+        <div class="settings-content" style="background-color: var(--tab-bg); color: var(--text-color); margin: 10% auto; padding: 25px; border-radius: 15px; width: 300px; text-align: center; box-shadow: 0 5px 15px rgba(0,0,0,0.3);">
+            <h2 style="margin-top:0;">Settings</h2>
+            <hr>
+            
+            <div style="margin: 20px 0; display: flex; justify-content: space-between; align-items: center;">
+                <span>Dark Mode</span>
+                <button onclick="toggleDarkMode()" id="dark-mode-btn" class="btn" style="padding: 5px 10px;">Off</button>
+            </div>
+
+            <div style="margin: 20px 0;">
+                <p id="settings-email" style="font-size: 12px; opacity: 0.7;"></p>
+                <button onclick="handleSignOut()" style="width: 100%; padding: 10px; background: #e53e3e; color: white; border: none; border-radius: 5px; cursor: pointer;">Sign Out</button>
+            </div>
+
+            <button onclick="closeSettings()" style="background: none; border: none; color: #4A90E2; cursor: pointer; text-decoration: underline;">Close</button>
+        </div>
+    </div>
+
+    <div id="toast-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999;"></div>
 
     <script src="script.js"></script>
 </body>
