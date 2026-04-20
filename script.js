@@ -6,6 +6,7 @@ let moveRight = false;
 let userEmail = null;
 let userID = null; 
 let chatHistory = []; // Added for AI memory
+let isGenerating = false;
 
 // Naming Logic Variables
 let isNaming = false;
@@ -97,11 +98,17 @@ async function updateUserMusic() {
 
 // --- 4. AI Assistant ---
 async function askAI() {
+    // If already thinking, don't allow a new prompt
+    if (isGenerating) return;
+
     const userInputField = document.getElementById('user-input');
     const userInput = userInputField.value.trim();
     const chatWindow = document.getElementById('chat-window');
     
     if (!userInput) return;
+
+    // Set flag to true
+    isGenerating = true;
 
     chatWindow.innerHTML += `<p><strong>You:</strong> ${userInput}</p>`;
     
@@ -131,9 +138,19 @@ async function askAI() {
         
     } catch (error) {
         loadingMsg.innerHTML = "<strong>AI:</strong> Error loading response.";
+    } finally {
+        // Reset flag so user can type again
+        isGenerating = false;
+        chatWindow.scrollTop = chatWindow.scrollHeight;
     }
-    chatWindow.scrollTop = chatWindow.scrollHeight;
 }
+
+// Update the listener at the bottom of your file to this:
+document.getElementById('user-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !isGenerating) {
+        askAI();
+    }
+});
 
 // --- 5. Doodle Jump Core & Custom UI ---
 const canvas = document.getElementById('jumpGame');
