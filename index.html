@@ -22,12 +22,14 @@
             <button class="nav-btn" onclick="showTab('ai')">AI</button>
         </div>
 
-        <div class="account-zone">
+        <div class="account-zone" style="position: relative; z-index: 1001;">
             <div id="g_id_onload"
                  data-client_id="395838452484-29r7mrhrb50og9elibotn4e3051fmi03.apps.googleusercontent.com"
                  data-callback="handleCredentialResponse">
             </div>
-            <div class="g_id_signin" data-type="icon" data-shape="circle" data-theme="outline"></div>
+            <div style="display: inline-block;">
+                <div class="g_id_signin" data-type="icon" data-shape="circle" data-theme="outline"></div>
+            </div>
             <div id="user-profile" style="display: none;">
                 <img id="user-avatar" src="" alt="User" title="Profile">
             </div>
@@ -59,7 +61,7 @@
         <div id="barca" class="tab-content">
             <section class="card">
                 <h2>FC Barcelona Updates</h2>
-                <div id="widget-container" style="min-height: 500px;">
+                <div id="widget-container" style="min-height: 500px; position: relative;">
                     <div data-widget-type="entityScores" 
                          data-entity-type="team" 
                          data-entity-id="132" 
@@ -67,9 +69,9 @@
                          data-widget-id="35cb5715-3e5e-4277-a2f6-3c0d477a56fd" 
                          data-theme="dark">
                     </div>
-                    <div id="powered-by" style="font-size: 10px; margin-top: 5px; text-align: center; opacity: 0.7;">
-                        Powered by <a id="powered-by-link" href="https://www.365scores.com" target="_blank" style="color: #4A90E2; text-decoration: none;">365Scores.com</a>
-                    </div>
+                </div>
+                <div style="font-size: 10px; margin-top: 10px; text-align: center; opacity: 0.7;">
+                    Powered by <a href="https://www.365scores.com" target="_blank" rel="noopener" style="color: #4A90E2; text-decoration: none !important;">365Scores.com</a>
                 </div>
             </section>
         </div>
@@ -113,7 +115,7 @@
         </div>
     </div>
 
-    <div id="settings-modal" style="display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
+    <div id="settings-modal" style="display:none; position:fixed; z-index:2000; left:0; top:0; width:100%; height:100%; background-color: rgba(0,0,0,0.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);">
         <div class="settings-content">
             <h2 style="margin-top:0; border:none;">Settings</h2>
             <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 15px 0;">
