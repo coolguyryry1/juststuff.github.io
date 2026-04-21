@@ -1,6 +1,6 @@
 // Global variables
 let bestScore = 0;
-let playerName = ""; 
+let playerName = "Anonymous"; 
 let moveLeft = false;
 let moveRight = false;
 let userEmail = null;
@@ -46,25 +46,59 @@ function toggleMenu() {
 // --- 2. Google Login & Account Sync ---
 async function handleCredentialResponse(response) {
     const payload = JSON.parse(atob(response.credential.split('.')[1]));
-    userEmail = payload.email;
-    userID = payload.sub; 
-    playerName = payload.given_name || payload.name;
+    
+    // Save session to localStorage
+    localStorage.setItem('isLoggedIn', 'true');
+    localStorage.setItem('savedUser', JSON.stringify({
+        email: payload.email,
+        sub: payload.sub,
+        name: payload.given_name || payload.name,
+        picture: payload.picture
+    }));
 
-    document.querySelector('.g_id_signin').style.display = 'none';
+    setupUserSession(payload);
+}
+
+function setupUserSession(user) {
+    userEmail = user.email;
+    userID = user.sub; 
+    playerName = user.name || user.given_name;
+
+    const signinBtn = document.querySelector('.g_id_signin');
+    if (signinBtn) signinBtn.style.display = 'none';
+    
     const profileDiv = document.getElementById('user-profile');
     const avatarImg = document.getElementById('user-avatar');
     if (profileDiv && avatarImg) {
         profileDiv.style.display = 'block';
-        avatarImg.src = payload.picture;
+        avatarImg.src = user.picture;
         avatarImg.onclick = openSettings;
     }
 
-    document.getElementById('user-email').innerText = userEmail;
-    document.getElementById('calendar-container').style.display = 'block';
-    const iframe = document.getElementById('google-calendar-iframe');
-    iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(userEmail)}&ctz=America%2FNew_York`;
+    const emailLabel = document.getElementById('user-email');
+    if (emailLabel) emailLabel.innerText = userEmail;
 
-    await loadUserMusic();
+    const settingsEmail = document.getElementById('settings-email');
+    if (settingsEmail) settingsEmail.innerText = userEmail;
+    
+    const calendar = document.getElementById('calendar-container');
+    if (calendar) calendar.style.display = 'block';
+    
+    const iframe = document.getElementById('google-calendar-iframe');
+    if (iframe) {
+        iframe.src = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(userEmail)}&ctz=America%2FNew_York`;
+    }
+
+    loadUserMusic();
+}
+
+function handleSignOut() {
+    localStorage.removeItem('isLoggedIn');
+    localStorage.removeItem('savedUser');
+    userEmail = null; 
+    userID = null; 
+    playerName = "Anonymous";
+    location.reload(); // Hard reset for security/cleanliness
 }
 
 // --- 3. Spotify Logic ---
@@ -77,6 +111,12 @@ async function loadUserMusic() {
     try {
         const savedLink = await puter.kv.get(key);
         let finalLink = savedLink || defaultLink;
+        
+        // Ensure it's an embed link
+        if(finalLink.includes("spotify.com") && !finalLink.includes("/embed")) {
+            finalLink = finalLink.replace("spotify.com/", "spotify.com/embed/");
+        }
+
         wrapper.innerHTML = `<iframe style="border-radius:12px" src="${finalLink}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     } catch (e) { console.error(e); }
 }
@@ -90,6 +130,7 @@ async function updateUserMusic() {
         await puter.kv.set(key, link);
         await loadUserMusic();
         input.value = "";
+        showToast("Music Updated!");
     } catch (e) { console.error("Save failed", e); }
 }
 
@@ -130,49 +171,35 @@ function toggleDarkMode() {
     const btn = document.getElementById('dark-mode-btn');
     if (btn) btn.innerText = isDark ? "On" : "Off";
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
-    
-    // Trigger Barca Widget theme update
     renderBarcaWidget();
 }
 
-// Function to handle the 365Scores Widget Theme dynamically
 function renderBarcaWidget() {
     const container = document.getElementById('widget-container');
     if (!container) return;
 
     const isDark = document.body.classList.contains('dark-theme');
-    // If dark, add the attribute. If light, leave it out entirely.
-    const themeAttr = isDark ? 'data-theme="dark"' : '';
+    const themeValue = isDark ? 'dark' : 'light';
 
     container.innerHTML = `
         <div data-widget-type="entityScores" 
              data-entity-type="team" 
              data-entity-id="132" 
              data-lang="en" 
-             data-widget-id="61c4b2c7-4cdb-41c4-be2b-3ebd424c458e" 
-             ${themeAttr}>
+             data-widget-id="35cb5715-3e5e-4277-a2f6-3c0d477a56fd" 
+             data-theme="${themeValue}">
         </div>
         <div id="powered-by" style="font-size: 10px; margin-top: 5px; text-align: center; opacity: 0.7;">
             Powered by <a id="powered-by-link" href="https://www.365scores.com" target="_blank" style="color: var(--primary-color);">365Scores.com</a>
         </div>
     `;
 
-    // Re-inject the script to process the new HTML
     const oldScript = document.querySelector('script[src*="365scores.com/main.js"]');
     if (oldScript) oldScript.remove();
 
     const newScript = document.createElement('script');
     newScript.src = "https://widgets.365scores.com/main.js";
     container.appendChild(newScript);
-}
-
-function handleSignOut() {
-    userEmail = null; userID = null; playerName = "Anonymous";
-    document.getElementById('user-profile').style.display = 'none';
-    document.querySelector('.g_id_signin').style.display = 'block';
-    document.getElementById('calendar-container').style.display = 'none';
-    closeSettings();
-    showToast("Signed out successfully", "error");
 }
 
 function showToast(message, type = "success", duration = 3000) {
@@ -191,19 +218,10 @@ function toggleFullScreen() {
     const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
 
     if (!isFull) {
-        if (container.requestFullscreen) {
-            container.requestFullscreen();
-        } else if (container.webkitRequestFullscreen) {
-            container.webkitRequestFullscreen();
-        } else if (container.msRequestFullscreen) {
-            container.msRequestFullscreen();
-        }
+        if (container.requestFullscreen) container.requestFullscreen();
+        else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
     }
 }
 
@@ -227,7 +245,6 @@ function handleResize() {
 
 window.addEventListener('resize', handleResize);
 window.addEventListener('fullscreenchange', handleResize);
-window.addEventListener('webkitfullscreenchange', handleResize);
 
 // --- 7. Doodle Jump Core ---
 const canvas = document.getElementById('jumpGame');
@@ -281,15 +298,12 @@ function drawNamingScreen() {
     ctx.fillText("NEW HIGH SCORE!", canvas.width / 2, 120);
     ctx.font = "16px Arial";
     ctx.fillText("Type your name:", canvas.width / 2, 160);
-    
     ctx.strokeStyle = "#4A90E2";
     ctx.strokeRect(canvas.width / 2 - 80, 180, 160, 40);
-    
     ctx.fillStyle = "white";
     ctx.font = "20px Courier New";
     let cursor = (Date.now() % 1000 < 500) ? "_" : "";
     ctx.fillText(inputName + cursor, canvas.width / 2, 208);
-    
     ctx.fillStyle = "#48bb78";
     ctx.fillRect(canvas.width / 2 - 50, 240, 100, 40);
     ctx.fillStyle = "white";
@@ -299,10 +313,7 @@ function drawNamingScreen() {
 
 async function finishNaming() {
     const ghost = document.getElementById('mobile-keyboard-trigger');
-    if (ghost) { 
-        ghost.blur();
-        ghost.value = "";
-    }
+    if (ghost) { ghost.blur(); ghost.value = ""; }
     playerName = inputName.trim() || "Player";
     isNaming = false;
     drawGameOverScreen("Loading Leaderboard...");
@@ -362,15 +373,9 @@ function gameOver() {
         isNaming = true;
         inputName = "";
         const ghost = document.getElementById('mobile-keyboard-trigger');
-        if (ghost) { 
-            ghost.value = "";
-            setTimeout(() => ghost.focus(), 100); 
-        }
+        if (ghost) { ghost.value = ""; setTimeout(() => ghost.focus(), 100); }
         anim = requestAnimationFrame(function namingLoop() {
-            if (isNaming) {
-                drawNamingScreen();
-                anim = requestAnimationFrame(namingLoop);
-            }
+            if (isNaming) { drawNamingScreen(); anim = requestAnimationFrame(namingLoop); }
         });
     } else {
         handleLeaderboard(score).then(scores => drawGameOverScreen(scores));
@@ -482,11 +487,9 @@ canvas.addEventListener('mousedown', (e) => {
     const rect = canvas.getBoundingClientRect();
     const x = ((e.clientX - rect.left) / rect.width) * canvas.width;
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
-    
     if (isNaming) {
         if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
-            const ghost = document.getElementById('mobile-keyboard-trigger');
-            if (ghost) { ghost.focus(); }
+            document.getElementById('mobile-keyboard-trigger')?.focus();
         }
         if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
             if (inputName.length > 0) finishNaming();
@@ -496,67 +499,31 @@ canvas.addEventListener('mousedown', (e) => {
     if (!isPlaying && x > canvas.width/2 - 70 && x < canvas.width/2 + 70 && y > 380 && y < 425) initJumpGame();
 });
 
-const shootBtn = document.getElementById('mobile-shoot-btn');
-if (shootBtn) shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (isPlaying) shoot(); });
-
-canvas.addEventListener('touchstart', (e) => {
-    if (isNaming) {
-        const rect = canvas.getBoundingClientRect();
-        const touch = e.touches[0];
-        const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
-        const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
-        
-        if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
-            e.preventDefault();
-            e.stopPropagation();
-            const ghost = document.getElementById('mobile-keyboard-trigger');
-            if (ghost) { 
-                ghost.focus(); 
-                ghost.click(); 
-            }
-        }
-        if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
-            e.preventDefault();
-            e.stopPropagation();
-            if (inputName.length > 0) finishNaming();
-        }
-        return;
-    }
-    if (!isPlaying) return;
-    const touchX = e.touches[0].clientX;
-    if (touchX < window.innerWidth / 2) { moveLeft = true; moveRight = false; }
-    else { moveRight = true; moveLeft = false; }
-}, { passive: false });
-
-canvas.addEventListener('touchend', () => { moveLeft = false; moveRight = false; });
-
 const ghostInput = document.getElementById('mobile-keyboard-trigger');
 if (ghostInput) {
-    ghostInput.addEventListener('blur', () => {
-        if (isNaming) {
-            setTimeout(() => { if (isNaming) ghostInput.focus(); }, 150);
-        }
-    });
     ghostInput.addEventListener('input', (e) => { if (isNaming) inputName = e.target.value.substring(0, MAX_NAME_LENGTH); });
     ghostInput.addEventListener('keydown', (e) => { 
-        if (e.key === "Enter" && isNaming && inputName.length > 0) { 
-            ghostInput.blur(); 
-            finishNaming(); 
-        } 
+        if (e.key === "Enter" && isNaming && inputName.length > 0) finishNaming(); 
     });
 }
 
-document.getElementById('user-input')?.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter' && !isGenerating) askAI();
-});
-
 // --- Initializing App State ---
-if (localStorage.getItem('theme') === 'dark') {
+// Default to Dark Mode if no preference is set, or respect existing 'dark' setting
+const currentTheme = localStorage.getItem('theme');
+if (currentTheme === 'dark' || currentTheme === null) {
     document.body.classList.add('dark-theme');
+    localStorage.setItem('theme', 'dark');
     const btn = document.getElementById('dark-mode-btn');
     if (btn) btn.innerText = "On";
 }
 
-// Initial render of the Barca widget and music
+// Check for Saved Session
+const savedUser = localStorage.getItem('savedUser');
+if (localStorage.getItem('isLoggedIn') === 'true' && savedUser) {
+    setupUserSession(JSON.parse(savedUser));
+} else {
+    loadUserMusic(); // Load default music if not logged in
+}
+
+// Initial render of the Barca widget
 renderBarcaWidget();
-loadUserMusic();
