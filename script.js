@@ -153,15 +153,23 @@ function showToast(message, type = "success", duration = 3000) {
 
 // --- 6. Mobile & FullScreen Logic ---
 function toggleFullScreen() {
-    const docElm = document.documentElement;
+    const container = document.getElementById('game-container');
     const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
 
     if (!isFull) {
-        if (docElm.requestFullscreen) docElm.requestFullscreen();
-        else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
+        if (container.requestFullscreen) {
+            container.requestFullscreen();
+        } else if (container.webkitRequestFullscreen) {
+            container.webkitRequestFullscreen();
+        } else if (container.webkitEnterFullscreen) {
+            container.webkitEnterFullscreen();
+        }
     } else {
-        if (document.exitFullscreen) document.exitFullscreen();
-        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        }
     }
 }
 
@@ -439,12 +447,10 @@ canvas.addEventListener('mousedown', (e) => {
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
     
     if (isNaming) {
-        // Only trigger keyboard if clicking the actual input box area
         if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
             const ghost = document.getElementById('mobile-keyboard-trigger');
             if (ghost) { ghost.focus(); }
         }
-        // Submit button area
         if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
             if (inputName.length > 0) finishNaming();
         }
@@ -463,13 +469,14 @@ canvas.addEventListener('touchstart', (e) => {
         const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
         const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
         
-        // Input box area
         if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
+            e.preventDefault();
+            e.stopPropagation();
             const ghost = document.getElementById('mobile-keyboard-trigger');
-            if (ghost) ghost.focus();
+            if (ghost) { ghost.focus(); ghost.click(); }
         }
-        // Submit button area
         if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
+            e.preventDefault();
             if (inputName.length > 0) finishNaming();
         }
         return;
@@ -478,14 +485,19 @@ canvas.addEventListener('touchstart', (e) => {
     const touchX = e.touches[0].clientX;
     if (touchX < window.innerWidth / 2) { moveLeft = true; moveRight = false; }
     else { moveRight = true; moveLeft = false; }
-});
+}, { passive: false });
 
 canvas.addEventListener('touchend', () => { moveLeft = false; moveRight = false; });
 
 const ghostInput = document.getElementById('mobile-keyboard-trigger');
 if (ghostInput) {
+    ghostInput.addEventListener('blur', () => {
+        if (isNaming) {
+            setTimeout(() => { if (isNaming) ghostInput.focus(); }, 10);
+        }
+    });
     ghostInput.addEventListener('input', (e) => { if (isNaming) inputName = e.target.value.substring(0, MAX_NAME_LENGTH); });
-    ghostInput.addEventListener('keydown', (e) => { if (e.key === "Enter" && isNaming && inputName.length > 0) finishNaming(); });
+    ghostInput.addEventListener('keydown', (e) => { if (e.key === "Enter" && isNaming && inputName.length > 0) { ghostInput.blur(); finishNaming(); } });
 }
 
 document.getElementById('user-input')?.addEventListener('keydown', (e) => {
