@@ -130,6 +130,40 @@ function toggleDarkMode() {
     const btn = document.getElementById('dark-mode-btn');
     if (btn) btn.innerText = isDark ? "On" : "Off";
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    
+    // Trigger Barca Widget theme update
+    renderBarcaWidget();
+}
+
+// Function to handle the 365Scores Widget Theme dynamically
+function renderBarcaWidget() {
+    const container = document.getElementById('widget-container');
+    if (!container) return;
+
+    const isDark = document.body.classList.contains('dark-theme');
+    // If dark, add the attribute. If light, leave it out entirely.
+    const themeAttr = isDark ? 'data-theme="dark"' : '';
+
+    container.innerHTML = `
+        <div data-widget-type="entityScores" 
+             data-entity-type="team" 
+             data-entity-id="132" 
+             data-lang="en" 
+             data-widget-id="61c4b2c7-4cdb-41c4-be2b-3ebd424c458e" 
+             ${themeAttr}>
+        </div>
+        <div id="powered-by" style="font-size: 10px; margin-top: 5px; text-align: center; opacity: 0.7;">
+            Powered by <a id="powered-by-link" href="https://www.365scores.com" target="_blank" style="color: var(--primary-color);">365Scores.com</a>
+        </div>
+    `;
+
+    // Re-inject the script to process the new HTML
+    const oldScript = document.querySelector('script[src*="365scores.com/main.js"]');
+    if (oldScript) oldScript.remove();
+
+    const newScript = document.createElement('script');
+    newScript.src = "https://widgets.365scores.com/main.js";
+    container.appendChild(newScript);
 }
 
 function handleSignOut() {
@@ -160,7 +194,6 @@ function toggleFullScreen() {
         if (container.requestFullscreen) {
             container.requestFullscreen();
         } else if (container.webkitRequestFullscreen) {
-            // Needed for iOS Safari
             container.webkitRequestFullscreen();
         } else if (container.msRequestFullscreen) {
             container.msRequestFullscreen();
@@ -473,7 +506,6 @@ canvas.addEventListener('touchstart', (e) => {
         const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
         const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
         
-        // Use stopPropagation to prevent the game from handling this touch
         if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
             e.preventDefault();
             e.stopPropagation();
@@ -501,7 +533,6 @@ canvas.addEventListener('touchend', () => { moveLeft = false; moveRight = false;
 const ghostInput = document.getElementById('mobile-keyboard-trigger');
 if (ghostInput) {
     ghostInput.addEventListener('blur', () => {
-        // If the keyboard closes but we're still in naming mode, keep trying to re-focus
         if (isNaming) {
             setTimeout(() => { if (isNaming) ghostInput.focus(); }, 150);
         }
@@ -519,5 +550,13 @@ document.getElementById('user-input')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !isGenerating) askAI();
 });
 
-if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-theme');
+// --- Initializing App State ---
+if (localStorage.getItem('theme') === 'dark') {
+    document.body.classList.add('dark-theme');
+    const btn = document.getElementById('dark-mode-btn');
+    if (btn) btn.innerText = "On";
+}
+
+// Initial render of the Barca widget and music
+renderBarcaWidget();
 loadUserMusic();
