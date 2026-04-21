@@ -310,3 +310,23 @@ canvas {
     image-rendering: pixelated; 
     background-color: #ebf8ff; /* Match your game sky */
 }
+
+/* --- Fix for rogue underlining --- */
+* {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Ensure our special buttons never underline */
+.nav-btn, .btn, .nav-btn:hover, .btn:hover {
+    text-decoration: none !important;
+}
+
+/* Prevent the score from underlining */
+#jumpScore, .controls p {
+    text-decoration: none !important;
+    display: inline-block;
+}
