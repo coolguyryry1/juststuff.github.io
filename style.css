@@ -250,3 +250,50 @@ canvas {
     width: 100vw;
     height: 100vh;
 }
+
+/* --- Desktop: Normal Look --- */
+.menu-toggle { display: none; }
+
+/* --- Mobile: Dropdown Logic --- */
+@media (max-width: 480px) {
+    .menu-container { position: relative; }
+
+    .menu-toggle {
+        display: block;
+        background: var(--border-color);
+        border: none;
+        padding: 8px 12px;
+        border-radius: 8px;
+        cursor: pointer;
+        color: var(--text-color);
+    }
+
+    .nav-links {
+        display: none; /* Hide by default */
+        flex-direction: column;
+        position: absolute;
+        top: 45px;
+        left: 0;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        min-width: 120px;
+    }
+
+    /* Show class for JS to toggle */
+    .nav-links.open {
+        display: flex;
+    }
+
+    .nav-btn {
+        width: 100%;
+        text-align: left;
+        border-radius: 4px;
+    }
+
+    /* Keep Title and Avatar small to fit everything */
+    h1 { font-size: 1.2rem; margin: 0; }
+}
