@@ -160,9 +160,10 @@ function toggleFullScreen() {
         if (container.requestFullscreen) {
             container.requestFullscreen();
         } else if (container.webkitRequestFullscreen) {
+            // Needed for iOS Safari
             container.webkitRequestFullscreen();
-        } else if (container.webkitEnterFullscreen) {
-            container.webkitEnterFullscreen();
+        } else if (container.msRequestFullscreen) {
+            container.msRequestFullscreen();
         }
     } else {
         if (document.exitFullscreen) {
@@ -265,7 +266,10 @@ function drawNamingScreen() {
 
 async function finishNaming() {
     const ghost = document.getElementById('mobile-keyboard-trigger');
-    if (ghost) { ghost.blur(); }
+    if (ghost) { 
+        ghost.blur();
+        ghost.value = "";
+    }
     playerName = inputName.trim() || "Player";
     isNaming = false;
     drawGameOverScreen("Loading Leaderboard...");
@@ -327,7 +331,7 @@ function gameOver() {
         const ghost = document.getElementById('mobile-keyboard-trigger');
         if (ghost) { 
             ghost.value = "";
-            ghost.focus(); 
+            setTimeout(() => ghost.focus(), 100); 
         }
         anim = requestAnimationFrame(function namingLoop() {
             if (isNaming) {
@@ -469,14 +473,19 @@ canvas.addEventListener('touchstart', (e) => {
         const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
         const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
         
+        // Use stopPropagation to prevent the game from handling this touch
         if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
             e.preventDefault();
             e.stopPropagation();
             const ghost = document.getElementById('mobile-keyboard-trigger');
-            if (ghost) { ghost.focus(); ghost.click(); }
+            if (ghost) { 
+                ghost.focus(); 
+                ghost.click(); 
+            }
         }
         if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
             e.preventDefault();
+            e.stopPropagation();
             if (inputName.length > 0) finishNaming();
         }
         return;
@@ -492,12 +501,18 @@ canvas.addEventListener('touchend', () => { moveLeft = false; moveRight = false;
 const ghostInput = document.getElementById('mobile-keyboard-trigger');
 if (ghostInput) {
     ghostInput.addEventListener('blur', () => {
+        // If the keyboard closes but we're still in naming mode, keep trying to re-focus
         if (isNaming) {
-            setTimeout(() => { if (isNaming) ghostInput.focus(); }, 10);
+            setTimeout(() => { if (isNaming) ghostInput.focus(); }, 150);
         }
     });
     ghostInput.addEventListener('input', (e) => { if (isNaming) inputName = e.target.value.substring(0, MAX_NAME_LENGTH); });
-    ghostInput.addEventListener('keydown', (e) => { if (e.key === "Enter" && isNaming && inputName.length > 0) { ghostInput.blur(); finishNaming(); } });
+    ghostInput.addEventListener('keydown', (e) => { 
+        if (e.key === "Enter" && isNaming && inputName.length > 0) { 
+            ghostInput.blur(); 
+            finishNaming(); 
+        } 
+    });
 }
 
 document.getElementById('user-input')?.addEventListener('keydown', (e) => {
