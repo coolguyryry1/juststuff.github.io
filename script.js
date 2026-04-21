@@ -26,7 +26,6 @@ function showTab(tabId) {
     
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.classList.remove('active');
-        // Check for exact match or based on function call string
         if (btn.getAttribute('onclick')?.includes(`'${tabId}'`)) {
             btn.classList.add('active');
         }
@@ -36,10 +35,6 @@ function showTab(tabId) {
         isPlaying = false;
         isNaming = false;
         if (typeof anim !== 'undefined') cancelAnimationFrame(anim);
-    }
-    // Handle specific tab initializations
-    if (tabId === 'barca') {
-        // Any barca specific logic if needed
     }
 }
 
@@ -77,15 +72,11 @@ async function loadUserMusic() {
     const wrapper = document.getElementById('spotify-wrapper');
     if (!wrapper) return;
     const key = userID ? `spotify_${userID}` : `spotify_${playerID}`;
-    const defaultLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBMm1"; 
+    const defaultLink = "https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM3M"; 
     
     try {
         const savedLink = await puter.kv.get(key);
         let finalLink = savedLink || defaultLink;
-        // Basic check to ensure it's an embed link
-        if (finalLink.includes("open.spotify.com") && !finalLink.includes("/embed")) {
-            finalLink = finalLink.replace("open.spotify.com/", "open.spotify.com/embed/");
-        }
         wrapper.innerHTML = `<iframe style="border-radius:12px" src="${finalLink}" width="100%" height="152" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
     } catch (e) { console.error(e); }
 }
@@ -162,12 +153,12 @@ function showToast(message, type = "success", duration = 3000) {
 
 // --- 6. Mobile & FullScreen Logic ---
 function toggleFullScreen() {
-    const container = document.getElementById('game-container');
-    const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
+    const docElm = document.documentElement;
+    const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
 
     if (!isFull) {
-        if (container.requestFullscreen) container.requestFullscreen();
-        else if (container.webkitRequestFullscreen) container.webkitRequestFullscreen();
+        if (docElm.requestFullscreen) docElm.requestFullscreen();
+        else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
     } else {
         if (document.exitFullscreen) document.exitFullscreen();
         else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
@@ -178,10 +169,10 @@ function handleResize() {
     const isFull = !!(document.fullscreenElement || document.webkitFullscreenElement);
     if (isFull) {
         const ratio = window.innerWidth / window.innerHeight;
-        if (ratio < 0.8) { // Mobile Portrait
+        if (ratio < 0.8) { 
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-        } else { // Desktop/Tablet Fullscreen
+        } else { 
             canvas.width = 300;
             canvas.height = 500;
         }
@@ -189,7 +180,6 @@ function handleResize() {
         canvas.width = 300;
         canvas.height = 500;
     }
-    // Redraw if naming
     if (isNaming) drawNamingScreen();
 }
 
@@ -266,10 +256,10 @@ function drawNamingScreen() {
 }
 
 async function finishNaming() {
+    const ghost = document.getElementById('mobile-keyboard-trigger');
+    if (ghost) { ghost.blur(); }
     playerName = inputName.trim() || "Player";
     isNaming = false;
-    const ghost = document.getElementById('mobile-keyboard-trigger');
-    if (ghost) { ghost.value = ""; ghost.blur(); }
     drawGameOverScreen("Loading Leaderboard...");
     const topScores = await handleLeaderboard(score);
     drawGameOverScreen(topScores);
@@ -327,7 +317,10 @@ function gameOver() {
         isNaming = true;
         inputName = "";
         const ghost = document.getElementById('mobile-keyboard-trigger');
-        if (ghost) { ghost.focus(); ghost.click(); }
+        if (ghost) { 
+            ghost.value = "";
+            ghost.focus(); 
+        }
         anim = requestAnimationFrame(function namingLoop() {
             if (isNaming) {
                 drawNamingScreen();
@@ -446,8 +439,12 @@ canvas.addEventListener('mousedown', (e) => {
     const y = ((e.clientY - rect.top) / rect.height) * canvas.height;
     
     if (isNaming) {
-        const ghost = document.getElementById('mobile-keyboard-trigger');
-        if (ghost) { ghost.focus(); ghost.click(); }
+        // Only trigger keyboard if clicking the actual input box area
+        if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
+            const ghost = document.getElementById('mobile-keyboard-trigger');
+            if (ghost) { ghost.focus(); }
+        }
+        // Submit button area
         if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
             if (inputName.length > 0) finishNaming();
         }
@@ -460,11 +457,24 @@ const shootBtn = document.getElementById('mobile-shoot-btn');
 if (shootBtn) shootBtn.addEventListener('touchstart', (e) => { e.preventDefault(); if (isPlaying) shoot(); });
 
 canvas.addEventListener('touchstart', (e) => {
-    if (!isPlaying || isNaming) {
-        const ghost = document.getElementById('mobile-keyboard-trigger');
-        if (isNaming && ghost) { ghost.focus(); ghost.click(); }
+    if (isNaming) {
+        const rect = canvas.getBoundingClientRect();
+        const touch = e.touches[0];
+        const x = ((touch.clientX - rect.left) / rect.width) * canvas.width;
+        const y = ((touch.clientY - rect.top) / rect.height) * canvas.height;
+        
+        // Input box area
+        if (x > canvas.width / 2 - 80 && x < canvas.width / 2 + 80 && y > 180 && y < 220) {
+            const ghost = document.getElementById('mobile-keyboard-trigger');
+            if (ghost) ghost.focus();
+        }
+        // Submit button area
+        if (x > canvas.width / 2 - 50 && x < canvas.width / 2 + 50 && y > 240 && y < 280) {
+            if (inputName.length > 0) finishNaming();
+        }
         return;
     }
+    if (!isPlaying) return;
     const touchX = e.touches[0].clientX;
     if (touchX < window.innerWidth / 2) { moveLeft = true; moveRight = false; }
     else { moveRight = true; moveLeft = false; }
